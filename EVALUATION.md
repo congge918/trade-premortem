@@ -1,5 +1,14 @@
 # Evaluation — 2026-09-10
 
+## Public deployment QA — 2026-09-11
+
+- Demo: https://trade-premortem.onrender.com
+- Render health check: `ok=true`, `executionEnabled=false`.
+- Public replay catalog: 5 demo stories across `RNVDAUSDT`, `RAAPLUSDT`, `RGOOGLUSDT`, and `RCOINUSDT`.
+- Browser-verified verdict paths: `WAIT`, `INSUFFICIENT_EVIDENCE`, and `PROCEED_WITH_LIMITS`.
+- Browser-verified live Bitget path: six evidence items labeled `LIVE · FACT`, including ticker, candles, market state, market calendar, instrument state, and company overview.
+- Qwen is not yet configured on Render; the UI truthfully labels deterministic fallback as `规则回退 · 未调用模型`.
+
 ## 结论
 
 TradePremortem 的确定性主链路已达到提交前最低标准。以下数字来自本地脚本实际输出，不包含人工补写结果。

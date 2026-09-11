@@ -31,8 +31,8 @@ Before a human acts, it:
 
 No wallet connection. No order execution. Human decides.
 
-Demo: [URL]
-Code: [URL]
+Demo: https://trade-premortem.onrender.com
+Code: https://github.com/congge918/trade-premortem
 Video: [URL]
 
 Built for AI Trading Desk / Decision Stress Test.

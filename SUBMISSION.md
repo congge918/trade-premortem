@@ -48,10 +48,10 @@ AI Trading 的价值不是把不确定性包装成确定答案，而是把事实
 ## 材料链接
 
 ```text
-[在线 Demo]
-[GitHub 仓库]
-[README]
-[Evaluation]
+[在线 Demo] https://trade-premortem.onrender.com
+[GitHub 仓库] https://github.com/congge918/trade-premortem
+[README] https://github.com/congge918/trade-premortem#readme
+[Evaluation] https://github.com/congge918/trade-premortem/blob/main/EVALUATION.md
 [不超过 3 分钟演示视频]
 [最终 X 帖]
 ```

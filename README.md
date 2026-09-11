@@ -1,5 +1,8 @@
 # TradePremortem
 
+**Live Demo:** https://trade-premortem.onrender.com  
+**GitHub:** https://github.com/congge918/trade-premortem
+
 > 面向 rToken 交易者的 AI 交易失败预演台：在下单前主动寻找反方证据，计算历史极端亏损与组合集中度，并在数据不足时拒绝给出结论。
 
 TradePremortem 是为 Bitget Base Camp Hackathon S2「AI Trading Desk / 决策压力测试」构建的只读研究 Demo。它不预测收益、不连接钱包、不提供下单接口。人类输入拟议交易和最大亏损预算，系统使用 Bitget rToken 数据做确定性压力计算，再由千问生成不能覆盖规则判决的反方解释。
