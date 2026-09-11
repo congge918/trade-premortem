@@ -2,11 +2,16 @@
 
 ## 立项帖
 
-Most trading agents start with “Should I buy?”
+我在做 TradePremortem，一个面向 Bitget rToken 交易者的失败预演台。
 
-I’m building TradePremortem for @Bitget_AI: an rToken decision stress desk that starts with a harder question — “Assume this trade already failed. Why?”
+下单前先假设交易已经失败，再用实时 Bitget 数据、P1/P5 压力亏损和组合集中度寻找反证。证据过期时，系统直接拒答。只读研究，不连接钱包，不下单。
 
-It separates Bitget facts, deterministic risk math and AI counterarguments. No wallet. No order execution. #BitgetHackathon
+Demo: https://trade-premortem.onrender.com
+Code: https://github.com/congge918/trade-premortem
+
+Qwen 赛期额度已申请，到账后接入反方推理。
+
+@Bitget_AI #BitgetHackathon
 
 ## 验证帖
 
