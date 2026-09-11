@@ -1,0 +1,16 @@
+{
+  "name": "trade-premortem",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Evidence-first rToken trade premortem desk for Bitget Base Camp Hackathon S2.",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test",
+    "evaluate": "node scripts/evaluate.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

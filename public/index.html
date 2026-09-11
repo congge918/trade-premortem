@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="TradePremortem：面向 Bitget rToken 的证据优先交易失败预演台。">
+    <title>TradePremortem — rToken 交易失败预演台</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%2317242d'/%3E%3Cpath d='M14 17h36M32 17v32' stroke='%23f2f4f1' stroke-width='6'/%3E%3Ccircle cx='45' cy='43' r='9' fill='none' stroke='%23b84c38' stroke-width='4'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="/styles.css">
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#workbench">跳到压力测试</a>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="TradePremortem 首页">
+        <span class="brand-mark" aria-hidden="true">T<span>×</span>P</span>
+        <span><strong>TradePremortem</strong><small>Evidence before exposure</small></span>
+      </a>
+      <div class="topbar-meta">
+        <span class="status-dot">只读研究模式</span>
+        <span>AI Trading Desk · 决策压力测试</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Bitget Base Camp S2 · Case file 001</p>
+          <h1 id="hero-title">先假设这笔交易<br><em>已经失败。</em></h1>
+          <p class="hero-lede">不是替你预测涨跌。我们把拟议的 rToken 交易放进历史极端波动、休市偏离、公司事件与组合集中度中，寻找最有可能推翻它的证据。</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#proposal">开始失败预演</a>
+            <button class="button ghost" id="load-stale" type="button">看系统如何拒答</button>
+          </div>
+        </div>
+        <div class="case-diagram" aria-label="压力测试工作流">
+          <span class="diagram-label">THE CROSS-EXAMINATION</span>
+          <ol>
+            <li><span>01</span><strong>你的交易论点</strong><small>人类提出假设与亏损预算</small></li>
+            <li><span>02</span><strong>Bitget 事实层</strong><small>rToken 行情、K 线、市场状态</small></li>
+            <li><span>03</span><strong>确定性压力闸门</strong><small>P1 / P5、MAD、组合暴露</small></li>
+            <li><span>04</span><strong>AI 反方审讯</strong><small>隐藏假设、反证与改判条件</small></li>
+          </ol>
+          <div class="human-seal">HUMAN<br>DECIDES</div>
+        </div>
+      </section>
+
+      <section class="proof-strip" aria-label="产品边界">
+        <span><b>01</b> 无下单接口</span>
+        <span><b>02</b> 证据逐条带时间</span>
+        <span><b>03</b> 规则计算不可被 AI 覆盖</span>
+        <span><b>04</b> 数据不足时拒绝结论</span>
+      </section>
+
+      <section class="workbench" id="workbench">
+        <aside class="intake-panel" id="proposal">
+          <div class="section-heading">
+            <span>INPUT / 拟议交易</span>
+            <span class="case-number">CASE 001</span>
+          </div>
+
+          <div class="source-toggle" role="group" aria-label="数据来源">
+            <button type="button" class="source-button" id="use-live">实时 Bitget</button>
+            <button type="button" class="source-button active" id="use-replay">可复现回放</button>
+          </div>
+
+          <div class="scenario-rack">
+            <p>快速案例</p>
+            <div id="scenario-buttons" class="scenario-buttons" aria-live="polite"></div>
+          </div>
+
+          <form id="proposal-form">
+            <div class="field-row two">
+              <label>rToken
+                <select id="symbol" name="symbol">
+                  <option value="RNVDAUSDT">rNVDA / USDT</option>
+                  <option value="RAAPLUSDT">rAAPL / USDT</option>
+                  <option value="RGOOGLUSDT">rGOOGL / USDT</option>
+                  <option value="RCOINUSDT">rCOIN / USDT</option>
+                </select>
+              </label>
+              <label>方向
+                <select id="side" name="side">
+                  <option value="BUY">买入 / 建仓</option>
+                  <option value="SELL">卖出 / 减仓</option>
+                </select>
+              </label>
+            </div>
+            <div class="field-row three">
+              <label>名义金额<small>USDT</small>
+                <input id="notional" name="notional" type="number" min="10" step="10" value="1000" required>
+              </label>
+              <label>最大亏损<small>USDT</small>
+                <input id="risk-budget" name="riskBudget" type="number" min="1" step="1" value="25" required>
+              </label>
+              <label>持有周期<small>小时</small>
+                <select id="horizon" name="horizon">
+                  <option value="1">1 H</option>
+                  <option value="4">4 H</option>
+                  <option value="24" selected>24 H</option>
+                </select>
+              </label>
+            </div>
+            <label>你的交易论点
+              <textarea id="thesis" name="thesis" rows="4" minlength="12" maxlength="800" required>美股常规盘之外出现新信息，计划立即建立仓位捕捉可能的价格重估。</textarea>
+            </label>
+            <details class="portfolio-editor">
+              <summary>现有组合样本 <span>JSON · 可编辑</span></summary>
+              <textarea id="portfolio" rows="7" spellcheck="false">[
+  {"symbol":"RAAPLUSDT","notionalUsdt":700},
+  {"symbol":"RNVDAUSDT","notionalUsdt":500},
+  {"symbol":"RGOOGLUSDT","notionalUsdt":600},
+  {"symbol":"USDT","notionalUsdt":1200}
+]</textarea>
+            </details>
+            <p class="form-error" id="form-error" role="alert"></p>
+            <button class="button analyze-button" id="analyze-button" type="submit">
+              <span>运行压力测试</span><span aria-hidden="true">→</span>
+            </button>
+            <p class="boundary-note">本操作只生成研究报告，不会连接钱包或发送订单。</p>
+          </form>
+        </aside>
+
+        <section class="report-panel" aria-labelledby="report-title">
+          <div class="section-heading">
+            <span id="report-title">OUTPUT / 失败预演判决</span>
+            <span id="report-mode" class="mode-badge replay">REPLAY</span>
+          </div>
+
+          <div id="report-empty" class="report-empty">
+            <div class="scan-lines" aria-hidden="true"></div>
+            <p>等待证据进入审讯台</p>
+            <small>选择一个案例，或使用实时 Bitget 数据运行测试。</small>
+          </div>
+
+          <div id="report" class="report" hidden aria-live="polite">
+            <article class="verdict-card">
+              <div>
+                <p class="eyebrow">DETERMINISTIC VERDICT</p>
+                <h2 id="verdict-title">等待</h2>
+                <p id="verdict-summary"></p>
+              </div>
+              <div class="verdict-stamp" id="verdict-stamp">WAIT</div>
+            </article>
+
+            <div class="metric-grid">
+              <article><span>历史 P1 压力亏损</span><strong id="metric-loss">—</strong><small id="metric-p1">—</small></article>
+              <article><span>建议金额上限</span><strong id="metric-limit">—</strong><small>由亏损预算反推</small></article>
+              <article><span>板块集中度</span><strong id="metric-concentration">—</strong><small>阈值 45%</small></article>
+              <article><span>休市偏离</span><strong id="metric-mad">—</strong><small>阈值 2.50 MAD</small></article>
+            </div>
+
+            <article class="chart-card">
+              <div class="card-title"><span>rToken 价格证据</span><small id="chart-caption">最近 64 个一小时收盘</small></div>
+              <svg id="price-chart" viewBox="0 0 720 180" role="img" aria-label="价格回放折线图"></svg>
+            </article>
+
+            <div class="report-columns">
+              <article class="gate-card">
+                <div class="card-title"><span>压力闸门</span><small>规则引擎</small></div>
+                <ul id="check-list" class="check-list"></ul>
+              </article>
+              <article class="ai-card">
+                <div class="card-title"><span>反方审讯</span><small id="ai-provider">AI</small></div>
+                <blockquote id="counterargument"></blockquote>
+                <h3>隐藏假设</h3>
+                <ul id="assumption-list"></ul>
+                <h3>改判条件</h3>
+                <ul id="falsifier-list"></ul>
+              </article>
+            </div>
+
+            <article class="evidence-card">
+              <div class="card-title"><span>证据脊柱</span><small>事实与时间戳</small></div>
+              <div id="evidence-list" class="evidence-list"></div>
+            </article>
+
+            <article class="audit-card">
+              <span>REPORT ID <code id="report-id">—</code></span>
+              <span>AUDIT SHA-256 <code id="audit-hash">—</code></span>
+              <span id="report-warning">未调用任何交易接口</span>
+            </article>
+          </div>
+        </section>
+      </section>
+
+      <section class="method" aria-labelledby="method-title">
+        <div>
+          <p class="eyebrow">METHOD / 可复核方法</p>
+          <h2 id="method-title">AI 可以质疑，<br>不能篡改判决。</h2>
+        </div>
+        <div class="method-copy">
+          <p>Bitget 数据进入带时间戳的证据账本；确定性引擎计算持有期收益分布、P1/P5 不利波动、最大仓位与 MAD 偏离；最后才由模型生成反方论点。</p>
+          <p>任何证据窗口不足、行情超过 5 分钟或关键时间戳缺失，系统都停止在 <code>INSUFFICIENT_EVIDENCE</code>。这不是交易建议，也不会替代人的判断。</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>TradePremortem · Built for Bitget Base Camp Hackathon S2</span>
+      <span>Research only · No execution surface</span>
+    </footer>
+  </body>
+</html>
