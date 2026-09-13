@@ -74,7 +74,7 @@ const server = createServer(async (request, response) => {
       return json(response, 200, {
         ok: true,
         service: "TradePremortem",
-        qwenConfigured: Boolean(process.env.QWEN_API_KEY || process.env.DASHSCOPE_API_KEY),
+        qwenConfigured: Boolean(process.env.BITGET_QWEN_API_KEY || process.env.QWEN_API_KEY || process.env.DASHSCOPE_API_KEY),
         executionEnabled: false
       });
     }

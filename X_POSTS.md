@@ -9,7 +9,7 @@
 Demo: https://trade-premortem.onrender.com
 Code: https://github.com/congge918/trade-premortem
 
-Qwen 赛期额度已申请，到账后接入反方推理。
+Qwen 赛期额度已获批，正在完成公开部署验收。
 
 @Bitget_AI #BitgetHackathon
 

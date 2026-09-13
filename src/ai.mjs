@@ -31,35 +31,59 @@ function promptFor(result) {
   })}`;
 }
 
+function qwenConfig() {
+  return {
+    apiKey: process.env.BITGET_QWEN_API_KEY || process.env.QWEN_API_KEY || process.env.DASHSCOPE_API_KEY,
+    baseUrl: (process.env.QWEN_BASE_URL || "https://hackathon.bitgetops.com/v1").replace(/\/$/, ""),
+    model: process.env.QWEN_MODEL || "qwen3.8-max"
+  };
+}
+
+function responseText(payload) {
+  if (typeof payload.output_text === "string") return payload.output_text;
+  for (const item of payload.output || []) {
+    for (const content of item.content || []) {
+      if (typeof content.text === "string") return content.text;
+    }
+  }
+  return "";
+}
+
 export async function explainWithQwen(result) {
-  const apiKey = process.env.QWEN_API_KEY || process.env.DASHSCOPE_API_KEY;
+  const { apiKey, baseUrl, model } = qwenConfig();
   if (!apiKey) return fallbackNarrative(result);
   try {
-    const response = await fetch("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions", {
+    const response = await fetch(`${baseUrl}/responses`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: process.env.QWEN_MODEL || "qwen-plus",
-        temperature: 0.2,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: "你只做基于证据的交易前压力测试解释。人类保留最终决定。" },
-          { role: "user", content: promptFor(result) }
+        model,
+        input: [
+          {
+            role: "system",
+            content: [{ type: "input_text", text: "你只做基于证据的交易前压力测试解释。人类保留最终决定。" }]
+          },
+          { role: "user", content: [{ type: "input_text", text: promptFor(result) }] }
         ]
       }),
       signal: AbortSignal.timeout(15_000)
     });
     if (!response.ok) throw new Error(`Qwen HTTP ${response.status}`);
     const payload = await response.json();
-    const parsed = JSON.parse(payload.choices?.[0]?.message?.content || "{}");
-    if (!parsed.strongestCounterargument || !Array.isArray(parsed.falsifiers)) throw new Error("Qwen returned an invalid shape");
-    return { provider: process.env.QWEN_MODEL || "qwen-plus", generated: true, ...parsed };
+    const parsed = JSON.parse(responseText(payload) || "{}");
+    if (
+      typeof parsed.strongestCounterargument !== "string" ||
+      !Array.isArray(parsed.hiddenAssumptions) ||
+      !Array.isArray(parsed.falsifiers) ||
+      typeof parsed.humanPrompt !== "string"
+    ) throw new Error("Qwen returned an invalid shape");
+    return { provider: `Bitget Qwen · ${model}`, generated: true, ...parsed };
   } catch (error) {
     return { ...fallbackNarrative(result), warning: `千问调用失败，已使用确定性说明：${error.message}` };
   }
 }
 
-export { fallbackNarrative };
+export { fallbackNarrative, qwenConfig, responseText };

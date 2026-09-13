@@ -42,15 +42,17 @@ npm start
 
 如果本地网络阻止 Node 直连 Bitget，系统会保留错误原因并自动切换为 `REPLAY`；部署环境仍需重新通过实时数据验收。
 
-可选千问配置，只允许放在服务端环境变量中：
+赛期千问配置只允许放在服务端环境变量中：
 
-```bash
-set QWEN_API_KEY=your_server_side_key
-set QWEN_MODEL=qwen-plus
+```powershell
+$env:BITGET_QWEN_API_KEY="your_server_side_key"
+$env:QWEN_BASE_URL="https://hackathon.bitgetops.com/v1"
+$env:QWEN_MODEL="qwen3.8-max"
 npm start
 ```
 
-未配置或调用失败时，界面明确显示“规则回退 · 未调用模型”，不会把模板结果伪装成模型输出。
+默认使用 Bitget 赛期 Responses API。未配置或调用失败时，界面明确显示“规则回退 · 未调用模型”，不会把模板结果伪装成模型输出。
+密钥只应配置在 Render Secret 或本机环境变量中，不得写入仓库、前端代码、日志或提交材料。
 
 ## API
 
@@ -83,14 +85,14 @@ npm start
 
 ## 已验证结果
 
-2026-09-10 本地执行：
+2026-09-13 本地执行：
 
-- 11/11 自动化测试通过。
+- 14/14 自动化测试通过。
 - 16 个固定案例的判决和核心原因一致率：100%。
 - 证据字段完整率：95%（过期拒答案例故意缺少 `effectiveAt`）。
 - 过期/缺失数据阻断率：100%；错误完成数：0。
 - 16 个报告生成 16 个不同审计哈希。
-- 千问与普通 LLM 对照尚未运行：参赛者还未提供模型密钥，未编造结果。
+- 千问与普通 LLM 对照尚未运行：赛期接口尚未在公开部署完成验收，未编造结果。
 
 完整说明见 [EVALUATION.md](./EVALUATION.md)。
 
