@@ -107,6 +107,9 @@ export async function explainWithQwen(result) {
       },
       body: JSON.stringify({
         model,
+        reasoning: { effort: "none" },
+        max_output_tokens: 700,
+        store: false,
         input: [
           {
             role: "system",

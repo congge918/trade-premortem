@@ -74,6 +74,9 @@ test("Qwen Responses payload is parsed without changing the verdict", async () =
     const explanation = await explainWithQwen(result);
     assert.equal(request.url, "https://hackathon.bitgetops.com/v1/responses");
     assert.equal(request.body.model, "qwen3.8-max");
+    assert.deepEqual(request.body.reasoning, { effort: "none" });
+    assert.equal(request.body.max_output_tokens, 700);
+    assert.equal(request.body.store, false);
     assert.equal(request.options.headers.Authorization, "Bearer test-only-key");
     assert.equal(explanation.provider, "Bitget Qwen · qwen3.8-max");
     assert.equal(explanation.generated, true);
