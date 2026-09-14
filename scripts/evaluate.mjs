@@ -20,6 +20,7 @@ const results = cases.map((replay) => {
   const completeEvidence = result.evidence.filter((item) =>
     item.source && item.sourceUrl && item.observedAt && item.effectiveAt && item.freshness && item.kind
   ).length;
+  const scenarioEvidence = result.evidence.filter((item) => item.freshness === "SCENARIO");
   return {
     id: replay.id,
     category: replay.category,
@@ -28,20 +29,30 @@ const results = cases.map((replay) => {
     verdictMatch: result.verdict === expectedVerdict,
     reasonMatch: result.reasons.some((item) => item.code === expectedReason),
     evidenceCompleteness: completeEvidence / result.evidence.length,
+    scenarioAnnotationValid: scenarioEvidence.every((item) => item.kind === "INFERENCE" && item.source === "TradePremortem scenario fixture"),
+    historicalAnalogCount: result.historicalAnalogs.length,
+    baseSnapshotHash: replay.baseSnapshotHash,
     auditHash: result.auditHash
   };
 });
 
 const stale = results.filter((item) => item.category === "stale");
+const valid = results.filter((item) => item.category !== "stale");
 const summary = {
   generatedAt: new Date().toISOString(),
   cases: results.length,
   verdictAgreement: results.filter((item) => item.verdictMatch && item.reasonMatch).length / results.length,
-  evidenceCompleteness: results.reduce((sum, item) => sum + item.evidenceCompleteness, 0) / results.length,
+  validEvidenceCompleteness: valid.reduce((sum, item) => sum + item.evidenceCompleteness, 0) / valid.length,
+  allCaseEvidenceCompleteness: results.reduce((sum, item) => sum + item.evidenceCompleteness, 0) / results.length,
+  scenarioAnnotationRate: results.filter((item) => item.scenarioAnnotationValid).length / results.length,
   staleBlockRate: stale.filter((item) => item.verdict === "INSUFFICIENT_EVIDENCE").length / stale.length,
   falseCompletionCount: stale.filter((item) => item.verdict !== "INSUFFICIENT_EVIDENCE").length,
+  historicalAnalogCoverage: results.filter((item) => item.historicalAnalogCount === 3).length / results.length,
+  uniqueSourceSnapshots: new Set(results.map((item) => item.baseSnapshotHash)).size,
   uniqueAuditHashes: new Set(results.map((item) => item.auditHash)).size,
-  qwenBaseline: process.env.QWEN_API_KEY || process.env.DASHSCOPE_API_KEY ? "credential available; run human-reviewed comparison" : "not run; no credential supplied"
+  qwenBaseline: process.env.BITGET_QWEN_API_KEY || process.env.QWEN_API_KEY || process.env.DASHSCOPE_API_KEY
+    ? "credential available; run human-reviewed comparison"
+    : "not run; no credential supplied"
 };
 
 console.log(JSON.stringify({ summary, results }, null, 2));

@@ -7,6 +7,7 @@ test("service creates and stores a replay-backed report without credentials", as
   const report = await createStressTest({ replayId: replay.id, proposal: replay.proposal });
   assert.equal(report.sourceMode, "REPLAY");
   assert.equal(report.verdict, "WAIT");
+  assert.equal(report.baseSnapshotHash.length, 64);
   assert.equal(report.ai.generated, false);
   assert.equal(report.ai.provider, "DETERMINISTIC_FALLBACK");
   assert.equal(findStressTest(report.id)?.auditHash, report.auditHash);

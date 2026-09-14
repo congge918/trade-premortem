@@ -22,12 +22,30 @@ function fallbackNarrative(result) {
 }
 
 function promptFor(result) {
+  const market = result.market || {};
   return `你是一个交易观点的反方审讯员，不预测收益，也不下单。只根据给定 JSON 返回严格 JSON，字段为 strongestCounterargument(string)、hiddenAssumptions(string[3])、falsifiers(string[3])、humanPrompt(string)。不得改变 verdict，不得编造 JSON 中没有的事实。\n${JSON.stringify({
     verdict: result.verdict,
     proposal: result.proposal,
     metrics: result.metrics,
+    market: {
+      symbol: market.symbol,
+      session: market.session,
+      lastPrice: market.lastPrice,
+      referenceClose: market.referenceClose,
+      capturedAt: market.capturedAt,
+      mode: market.mode
+    },
     reasons: result.reasons,
-    evidence: result.evidence.map(({ title, source, observedAt, effectiveAt, kind }) => ({ title, source, observedAt, effectiveAt, kind }))
+    historicalAnalogs: result.historicalAnalogs || [],
+    evidence: (result.evidence || []).map(({ title, source, observedAt, effectiveAt, freshness, kind, summary }) => ({
+      title,
+      source,
+      observedAt,
+      effectiveAt,
+      freshness,
+      kind,
+      summary
+    }))
   })}`;
 }
 

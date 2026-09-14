@@ -66,6 +66,12 @@ function median(values) {
   return percentile([...values].sort((a, b) => a - b), 0.5);
 }
 
+function standardDeviation(values) {
+  if (!values.length) return 0;
+  const average = values.reduce((sum, value) => sum + value, 0) / values.length;
+  return Math.sqrt(values.reduce((sum, value) => sum + (value - average) ** 2, 0) / values.length);
+}
+
 export function calculateReturns(candles, horizonHours) {
   const closes = [...candles]
     .map((candle) => ({ ts: Number(candle.ts), close: Number(candle.close) }))
@@ -76,6 +82,42 @@ export function calculateReturns(candles, horizonHours) {
     output.push(closes[index].close / closes[index - horizonHours].close - 1);
   }
   return output;
+}
+
+export function findHistoricalAnalogs(candles, horizonHours, currentPrice, referenceClose, side = "BUY", limit = 3) {
+  const closes = [...candles]
+    .map((candle) => ({ ts: Number(candle.ts), close: Number(candle.close) }))
+    .filter((candle) => Number.isFinite(candle.ts) && Number.isFinite(candle.close) && candle.close > 0)
+    .sort((a, b) => a.ts - b.ts);
+  const lookback = Math.max(12, horizonHours);
+  if (closes.length < lookback + horizonHours + 1 || !(currentPrice > 0) || !(referenceClose > 0)) return [];
+  const hourlyReturns = closes.slice(1).map((item, index) => item.close / closes[index].close - 1);
+  const currentMove = currentPrice / referenceClose - 1;
+  const currentVolatility = standardDeviation(hourlyReturns.slice(-lookback));
+  const moveScale = Math.max(0.005, Math.abs(currentMove));
+  const volatilityScale = Math.max(0.002, currentVolatility);
+  const candidates = [];
+
+  for (let index = lookback; index + horizonHours < closes.length; index += 1) {
+    const stateMove = closes[index].close / closes[index - horizonHours].close - 1;
+    const realizedVolatility = standardDeviation(hourlyReturns.slice(index - lookback, index));
+    const forwardReturn = closes[index + horizonHours].close / closes[index].close - 1;
+    const distance =
+      Math.abs(stateMove - currentMove) / moveScale +
+      Math.abs(realizedVolatility - currentVolatility) / volatilityScale;
+    candidates.push({
+      anchorAt: new Date(closes[index].ts).toISOString(),
+      similarity: 1 / (1 + distance),
+      stateMove,
+      realizedVolatility,
+      forwardReturn,
+      adverseLossRate: Math.max(0, side === "SELL" ? forwardReturn : -forwardReturn)
+    });
+  }
+
+  return candidates
+    .sort((a, b) => b.similarity - a.similarity || b.adverseLossRate - a.adverseLossRate)
+    .slice(0, limit);
 }
 
 function adversePercentiles(returns, side) {
@@ -134,6 +176,13 @@ export function evaluateStressTest({ proposal: rawProposal, market, evidence = [
   const now = Date.parse(clockAt);
   if (!Number.isFinite(now)) throw new TypeError("clockAt must be an ISO timestamp");
   const returns = calculateReturns(market?.candles || [], proposal.horizonHours);
+  const historicalAnalogs = findHistoricalAnalogs(
+    market?.candles || [],
+    proposal.horizonHours,
+    Number(market?.ticker?.lastPrice),
+    Number(market?.referenceClose),
+    proposal.side
+  );
   const tickerFreshness = freshnessState(market?.ticker?.capturedAt, now);
   const missingTimestamp = evidence.some((item) => !item.observedAt || !item.effectiveAt);
   const qualityFailures = [];
@@ -221,6 +270,7 @@ export function evaluateStressTest({ proposal: rawProposal, market, evidence = [
     },
     checks,
     reasons: [...qualityFailures, ...blockers],
+    historicalAnalogs,
     evidence,
     market: {
       symbol: proposal.symbol,

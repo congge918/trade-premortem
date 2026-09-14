@@ -23,8 +23,8 @@ TradePremortem 是为 Bitget Base Camp Hackathon S2「AI Trading Desk / 决策�
 
 大多数交易助手从“该不该买”开始。TradePremortem 从“假设已经失败，最可能怎么失败”开始：
 
-1. **事实层**：Bitget UTA v3 的 Reality instruments、ticker、1H candles、美国市场状态与休市日历。
-2. **压力层**：对应持有期的历史 P1/P5 不利波动、亏损预算反推仓位、板块集中度和休市 MAD 偏离。
+1. **事实层**：Bitget UTA v3 的 Reality instruments、ticker、1H candles、美国市场状态/日历、公司概览、估值、盈利预测与停复牌状态。
+2. **压力层**：检索 3 个历史相似窗口，并计算对应持有期的 P1/P5 不利波动、亏损预算反推仓位、板块集中度和休市 MAD 偏离。
 3. **拒答层**：窗口少于 30、ticker 超过 5 分钟或证据时间戳缺失时，输出 `INSUFFICIENT_EVIDENCE`。
 4. **AI 层**：千问只生成最强反方论点、隐藏假设和改判条件，不能修改规则引擎的 verdict。
 5. **人类层**：输出是 `PROCEED_WITH_LIMITS`、`WAIT` 或 `INSUFFICIENT_EVIDENCE`；三者都不会触发交易。
@@ -53,6 +53,15 @@ npm start
 
 默认使用 Bitget 赛期 Responses API。未配置或调用失败时，界面明确显示“规则回退 · 未调用模型”，不会把模板结果伪装成模型输出。
 密钥只应配置在 Render Secret 或本机环境变量中，不得写入仓库、前端代码、日志或提交材料。
+
+重新采集公开 Bitget 快照和生成完整案例记录：
+
+```bash
+npm run capture
+npm run case-study
+```
+
+`data/replay-snapshots.json` 保存四个 rToken 的规范化真实快照和来源哈希。人为价格偏离、事件假设或缺失时间戳均单独显示为 `SCENARIO · INFERENCE`，不会伪装成 Bitget 事实。
 
 ## API
 
@@ -85,16 +94,20 @@ npm start
 
 ## 已验证结果
 
-2026-09-13 本地执行：
+2026-09-14 本地执行：
 
-- 14/14 自动化测试通过。
+- 15/15 自动化测试通过。
 - 16 个固定案例的判决和核心原因一致率：100%。
-- 证据字段完整率：95%（过期拒答案例故意缺少 `effectiveAt`）。
+- 有效案例证据字段完整率：100%；包含故障注入的全体案例为 97.5%。
 - 过期/缺失数据阻断率：100%；错误完成数：0。
+- 情景注入正确标注率：100%；历史相似场景覆盖率：100%。
+- 四个 rToken 均使用真实 Bitget 规范化快照，每个快照保留 400 根 1 小时 K 线和来源哈希。
 - 16 个报告生成 16 个不同审计哈希。
 - 千问与普通 LLM 对照尚未运行：赛期接口尚未在公开部署完成验收，未编造结果。
 
 完整说明见 [EVALUATION.md](./EVALUATION.md)。
+完整投研任务记录见 [CASE_STUDY.md](./CASE_STUDY.md)。
+真人测试方法与原始记录模板见 [USER_TEST.md](./USER_TEST.md)。
 
 ## 数据与安全边界
 
@@ -121,7 +134,9 @@ public/             取证实验台界面
 src/engine.mjs      确定性压力闸门
 src/bitget.mjs      Bitget 只读数据适配器
 src/ai.mjs          千问服务端适配与透明回退
-src/replays.mjs     可复现回放和 16 案例验证集
+src/replays.mjs     真实快照回放、显式情景注入和 16 案例验证集
+data/               四个 rToken 的规范化 Bitget 数据快照
+artifacts/          可机读的完整投研任务记录
 tests/              引擎与服务测试
 scripts/evaluate.mjs 量化验证脚本
 ```

@@ -44,6 +44,8 @@ export async function createStressTest(body) {
     sourceMode: context.market.mode,
     replayId: requestedReplay?.id || (context.market.mode === "REPLAY" ? context.id : null),
     snapshotHash: context.snapshotHash || null,
+    baseSnapshotHash: context.baseSnapshotHash || null,
+    scenarioInjections: context.scenarioInjections || [],
     warnings: [...(context.warnings || []), ...warnings, ...(ai.warning ? [ai.warning] : [])],
     ...result,
     ai

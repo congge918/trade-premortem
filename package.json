@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test",
-    "evaluate": "node scripts/evaluate.mjs"
+    "evaluate": "node scripts/evaluate.mjs",
+    "capture": "node scripts/capture-replay-snapshots.mjs",
+    "case-study": "node scripts/generate-case-study.mjs"
   },
   "engines": {
     "node": ">=20"

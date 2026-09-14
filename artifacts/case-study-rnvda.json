@@ -1,0 +1,309 @@
+{
+  "schemaVersion": 1,
+  "recordType": "AI_TRADING_DESK_RESEARCH_TASK",
+  "generatedAt": "2026-09-14T06:22:17.192Z",
+  "replayId": "rnvdausdt-concentration",
+  "baseSnapshotHash": "6ea88b56c416c6447ff47cb4079559c7b29cec6e1a011e5190f220585e78b7f8",
+  "scenarioSnapshotHash": "25ca8a54c9ac3029544a31c2fdacaae2156424da63619eafb0cb88b1db666016",
+  "verdict": "WAIT",
+  "proposal": {
+    "symbol": "RNVDAUSDT",
+    "side": "BUY",
+    "horizonHours": 24,
+    "notionalUsdt": 1000,
+    "riskBudgetUsdt": 25,
+    "thesis": "美股常规盘之外出现新信息，计划立即建立仓位捕捉可能的价格重估。",
+    "portfolio": [
+      {
+        "symbol": "RAAPLUSDT",
+        "notionalUsdt": 700
+      },
+      {
+        "symbol": "RNVDAUSDT",
+        "notionalUsdt": 500
+      },
+      {
+        "symbol": "RGOOGLUSDT",
+        "notionalUsdt": 600
+      },
+      {
+        "symbol": "USDT",
+        "notionalUsdt": 1200
+      }
+    ]
+  },
+  "metrics": {
+    "validWindows": 376,
+    "p1Return": -0.036934389374764676,
+    "p5Return": -0.029832155544260996,
+    "p1LossRate": 0.036934389374764676,
+    "p5LossRate": 0.029832155544260996,
+    "stressLossUsdt": 36.93438937476468,
+    "recommendedMaxNotional": 676.8759528235543,
+    "targetConcentration": 0.375,
+    "sectorConcentration": 0.7,
+    "offSessionMadScore": 0.774849138330161,
+    "currentVsReferenceReturn": -0.004260387557835754
+  },
+  "checks": [
+    {
+      "id": "data_quality",
+      "passed": true,
+      "detail": "数据窗口、时效和时间戳通过"
+    },
+    {
+      "id": "risk_budget",
+      "passed": false,
+      "detail": "建议名义金额上限 676.88 USDT"
+    },
+    {
+      "id": "concentration",
+      "passed": false,
+      "detail": "TECH 集中度 70.0%"
+    },
+    {
+      "id": "session_gap",
+      "passed": true,
+      "detail": "0.77 MAD"
+    },
+    {
+      "id": "event_risk",
+      "passed": true,
+      "detail": "持有窗口内无已知高风险事件"
+    }
+  ],
+  "reasons": [
+    {
+      "code": "RISK_BUDGET",
+      "label": "压力亏损超过预算",
+      "detail": "P1 压力亏损 36.93 USDT，高于预算 25.00 USDT",
+      "severity": "HIGH"
+    },
+    {
+      "code": "CONCENTRATION",
+      "label": "组合集中度过高",
+      "detail": "TECH 板块占交易后组合的 70.0%",
+      "severity": "HIGH"
+    }
+  ],
+  "historicalAnalogs": [
+    {
+      "anchorAt": "2026-09-10T09:00:00.000Z",
+      "similarity": 0.9530273092909533,
+      "stateMove": -0.0040254237288134265,
+      "realizedVolatility": 0.0011907550793098679,
+      "forwardReturn": -0.013246005889004708,
+      "adverseLossRate": 0.013246005889004708
+    },
+    {
+      "anchorAt": "2026-08-31T00:00:00.000Z",
+      "similarity": 0.8690359127547108,
+      "stateMove": -0.004250651309474773,
+      "realizedVolatility": 0.0014928516614426226,
+      "forwardReturn": 0.011429358303497672,
+      "adverseLossRate": 0
+    },
+    {
+      "anchorAt": "2026-08-31T04:00:00.000Z",
+      "similarity": 0.78180480657777,
+      "stateMove": -0.003975507219886709,
+      "realizedVolatility": 0.0016395764620774544,
+      "forwardReturn": 0.009588475478276903,
+      "adverseLossRate": 0
+    }
+  ],
+  "evidence": [
+    {
+      "id": "instrument",
+      "title": "Reality 交易产品状态",
+      "source": "Bitget UTA v3",
+      "sourceUrl": "https://api.bitget.com/api/v3/market/instruments?category=SPOT&symbol=RNVDAUSDT",
+      "observedAt": "2026-09-13T13:46:12.590Z",
+      "effectiveAt": "2026-04-23T03:22:32.903Z",
+      "freshness": "REPLAY",
+      "kind": "FACT",
+      "summary": null
+    },
+    {
+      "id": "ticker",
+      "title": "rToken 实时行情",
+      "source": "Bitget UTA v3",
+      "sourceUrl": "https://api.bitget.com/api/v3/market/tickers?category=SPOT&symbol=RNVDAUSDT",
+      "observedAt": "2026-09-13T13:46:14.172Z",
+      "effectiveAt": "2026-09-13T13:46:12.892Z",
+      "freshness": "REPLAY",
+      "kind": "FACT",
+      "summary": null
+    },
+    {
+      "id": "candles",
+      "title": "rToken 1 小时 K 线",
+      "source": "Bitget UTA v3",
+      "sourceUrl": "https://api.bitget.com/api/v3/market/candles?category=SPOT&symbol=RNVDAUSDT&interval=1H&type=market&limit=1000",
+      "observedAt": "2026-09-13T13:46:12.817Z",
+      "effectiveAt": "2026-09-13T13:00:00.000Z",
+      "freshness": "REPLAY",
+      "kind": "FACT",
+      "summary": null
+    },
+    {
+      "id": "market_state",
+      "title": "美股交易时段",
+      "source": "Bitget UTA v3",
+      "sourceUrl": "https://api.bitget.com/api/v3/reality/market/states",
+      "observedAt": "2026-09-13T13:46:19.500Z",
+      "effectiveAt": "2026-09-13T13:46:19.500Z",
+      "freshness": "REPLAY",
+      "kind": "FACT",
+      "summary": null
+    },
+    {
+      "id": "market_calendar",
+      "title": "美股休市日历",
+      "source": "Bitget UTA v3",
+      "sourceUrl": "https://api.bitget.com/api/v3/reality/market/calendar",
+      "observedAt": "2026-09-13T13:46:13.278Z",
+      "effectiveAt": "2026-09-13T13:46:13.278Z",
+      "freshness": "REPLAY",
+      "kind": "FACT",
+      "summary": null
+    },
+    {
+      "id": "company",
+      "title": "NVDA 公司概览",
+      "source": "Bitget UTA v3",
+      "sourceUrl": "https://api.bitget.com/api/v3/reality/market/company-overview?code=NVDA",
+      "observedAt": "2026-09-13T13:46:13.411Z",
+      "effectiveAt": "2026-09-13T13:46:13.411Z",
+      "freshness": "REPLAY",
+      "kind": "FACT",
+      "summary": "Nvidia · 行业未提供"
+    },
+    {
+      "id": "valuation",
+      "title": "NVDA 估值指标",
+      "source": "Bitget UTA v3",
+      "sourceUrl": "https://api.bitget.com/api/v3/reality/market/valuation-indicators?code=NVDA",
+      "observedAt": "2026-09-13T13:46:13.186Z",
+      "effectiveAt": "2025-10-25T16:00:00.000Z",
+      "freshness": "REPLAY",
+      "kind": "FACT",
+      "summary": "PE 45.6365000000000000 · PB 45.2113000000000000"
+    },
+    {
+      "id": "earnings_forecast",
+      "title": "NVDA 盈利预测",
+      "source": "Bitget UTA v3",
+      "sourceUrl": "https://api.bitget.com/api/v3/reality/market/earnings-forecast?code=NVDA",
+      "observedAt": "2026-09-13T13:46:12.897Z",
+      "effectiveAt": "2026-09-13T13:46:12.897Z",
+      "freshness": "REPLAY",
+      "kind": "FACT",
+      "summary": "FY2029 · EPS 25.2300 USD"
+    },
+    {
+      "id": "suspension",
+      "title": "NVDA 停复牌状态",
+      "source": "Bitget UTA v3",
+      "sourceUrl": "https://api.bitget.com/api/v3/reality/market/suspension-resumption-info?code=NVDA",
+      "observedAt": "2026-09-13T13:46:13.604Z",
+      "effectiveAt": "2026-09-13T13:46:13.604Z",
+      "freshness": "REPLAY",
+      "kind": "FACT",
+      "summary": "未返回有效停牌记录"
+    }
+  ],
+  "market": {
+    "symbol": "RNVDAUSDT",
+    "session": "CLOSED",
+    "lastPrice": 217.36,
+    "referenceClose": 218.29,
+    "capturedAt": "2026-09-13T13:46:12.892Z",
+    "mode": "REPLAY",
+    "event": null,
+    "sparkline": [
+      218.3985,
+      217.76,
+      218.57,
+      218.41,
+      218.2,
+      217.98,
+      218.31,
+      219.21,
+      219.87,
+      219.59,
+      220.3377,
+      220.3397,
+      220.188,
+      219.6477,
+      221.3777,
+      221.61,
+      219.47,
+      219.685,
+      219.105,
+      219.145,
+      219.35,
+      218.29,
+      218.3987,
+      218.3597,
+      218.2295,
+      218.241,
+      218.38,
+      218.23,
+      218.75,
+      218.56,
+      218.64,
+      218.81,
+      218.78,
+      218.92,
+      219.01,
+      218.49,
+      219.03,
+      218.66,
+      218.59,
+      219.09,
+      218.76,
+      219.01,
+      219.13,
+      218.9,
+      218.71,
+      218.74,
+      219.17,
+      219.22,
+      219.23,
+      219.23,
+      219.23,
+      219.23,
+      219.24,
+      219.26,
+      219.26,
+      219.21,
+      219.31,
+      219.2,
+      218.13,
+      218.03,
+      217.9,
+      217.75,
+      217.48,
+      217.36
+    ]
+  },
+  "evaluatedAt": "2026-09-13T13:46:12.892Z",
+  "auditHash": "516455e4fc7c8d4bafcadcaa862bc71f5f20d8ee5a734383f2b4a374e473c23e",
+  "ai": {
+    "provider": "DETERMINISTIC_FALLBACK",
+    "generated": false,
+    "strongestCounterargument": "压力亏损超过预算：P1 压力亏损 36.93 USDT，高于预算 25.00 USDT",
+    "hiddenAssumptions": [
+      "rToken 的历史波动分布能代表拟议持有期",
+      "现有组合名义金额能近似表达集中度",
+      "当前证据在人工决策前没有发生实质变化"
+    ],
+    "falsifiers": [
+      "Bitget 最新行情或公司事件数据发生显著变化",
+      "压力亏损重新计算后超过用户预算",
+      "市场恢复常规交易后偏离没有收敛"
+    ],
+    "humanPrompt": "请先核对证据时间与仓位上限，再由你决定是否继续；系统不会下单。"
+  }
+}

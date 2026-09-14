@@ -5,6 +5,7 @@ import {
   ALLOWED_SYMBOLS,
   calculateReturns,
   evaluateStressTest,
+  findHistoricalAnalogs,
   normalizeSymbol,
   validateProposal
 } from "../src/engine.mjs";
@@ -38,6 +39,24 @@ test("calculates rolling horizon returns without mutating candles", () => {
   assert.deepEqual(candles, original);
 });
 
+test("finds three historical analogs without using unavailable future candles", () => {
+  const replay = buildReplay("RNVDAUSDT", "gap");
+  const analogs = findHistoricalAnalogs(
+    replay.market.candles,
+    replay.proposal.horizonHours,
+    replay.market.ticker.lastPrice,
+    replay.market.referenceClose,
+    replay.proposal.side
+  );
+  assert.equal(analogs.length, 3);
+  const latestTimestamp = Math.max(...replay.market.candles.map((item) => item.ts));
+  for (const analog of analogs) {
+    assert.ok(analog.similarity > 0 && analog.similarity <= 1);
+    assert.ok(Date.parse(analog.anchorAt) + replay.proposal.horizonHours * 3_600_000 <= latestTimestamp);
+    assert.ok(Number.isFinite(analog.forwardReturn));
+  }
+});
+
 test("baseline case proceeds only with explicit limits", () => {
   const result = evaluateReplay(buildReplay("RAAPLUSDT", "baseline"));
   assert.equal(result.verdict, "PROCEED_WITH_LIMITS");
@@ -63,6 +82,9 @@ test("all 16 benchmark cases match their deterministic verdict and reason", () =
         concentration: "CONCENTRATION"
       }[replay.category];
       assert.ok(result.reasons.some((item) => item.code === expectedCode), replay.id);
+      if (replay.category === "event") {
+        assert.ok(replay.evidence.some((item) => item.id === "scenario_event" && item.kind === "INFERENCE"), replay.id);
+      }
     }
   }
 });
@@ -99,6 +121,7 @@ test("replay catalog and company-code mapping stay within the public demo set", 
   const replays = listPublicReplays();
   assert.ok(replays.length >= 5);
   assert.ok(replays.every((item) => ALLOWED_SYMBOLS.includes(item.symbol)));
+  assert.ok(replays.every((item) => item.baseSnapshotHash?.length === 64));
   assert.equal(getReplay(replays[0].id)?.snapshotHash, replays[0].snapshotHash);
   assert.equal(getCompanyCode("RNVDAUSDT"), "NVDA");
   assert.equal(getCompanyCode("BTCUSDT"), null);

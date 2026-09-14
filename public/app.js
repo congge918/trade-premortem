@@ -68,6 +68,10 @@ function formatPercent(value) {
   return Number.isFinite(value) ? `${(value * 100).toFixed(2)}%` : "—";
 }
 
+function formatDateTime(value) {
+  return value ? new Date(value).toLocaleString("zh-CN", { hour12: false }) : "—";
+}
+
 function shortHash(value) {
   return value ? `${value.slice(0, 10)}…${value.slice(-8)}` : "—";
 }
@@ -173,6 +177,16 @@ function renderReport(report) {
   $("#metric-mad").textContent = Number.isFinite(report.metrics.offSessionMadScore) ? `${report.metrics.offSessionMadScore.toFixed(2)} MAD` : "—";
   $("#chart-caption").textContent = `${report.market.symbol} · ${report.market.session} · 最近 64 个一小时收盘`;
   drawChart(report.market.sparkline, report.market.referenceClose);
+  const historicalAnalogs = report.historicalAnalogs || [];
+  $("#analog-list").innerHTML = historicalAnalogs.length
+    ? historicalAnalogs.map((item, index) => `
+      <div class="analog-row">
+        <span class="index">${String(index + 1).padStart(2, "0")}</span>
+        <div><strong>${escapeHtml(formatDateTime(item.anchorAt))}</strong><small>当时状态变化 ${formatPercent(item.stateMove)}</small></div>
+        <div><span>相似度</span><b>${formatPercent(item.similarity)}</b></div>
+        <div><span>后续 ${report.proposal.horizonHours}H</span><b class="${item.forwardReturn < 0 ? "negative" : ""}">${formatPercent(item.forwardReturn)}</b></div>
+      </div>`).join("")
+    : '<p class="empty-copy">历史窗口不足，无法生成相似场景。</p>';
   $("#check-list").innerHTML = report.checks.map((check) => `
     <li><span class="check-icon ${check.passed ? "" : "fail"}">${check.passed ? "✓" : "×"}</span><b>${escapeHtml(checkNames[check.id] || check.id)}</b><small>${escapeHtml(check.detail)}</small></li>`).join("");
   $("#ai-provider").textContent = report.ai.generated ? report.ai.provider : "规则回退 · 未调用模型";
@@ -182,12 +196,13 @@ function renderReport(report) {
   $("#evidence-list").innerHTML = report.evidence.map((item, index) => `
     <div class="evidence-row">
       <span class="index">${String(index + 1).padStart(2, "0")}</span>
-      <strong>${escapeHtml(item.title)}</strong>
+      <div class="evidence-name"><strong>${escapeHtml(item.title)}</strong>${item.summary ? `<small>${escapeHtml(item.summary)}</small>` : ""}</div>
       <time datetime="${escapeHtml(item.observedAt || "")}">${item.observedAt ? escapeHtml(new Date(item.observedAt).toLocaleString("zh-CN", { hour12: false })) : "时间缺失"}</time>
-      <span class="evidence-kind">${escapeHtml(item.freshness)} · ${escapeHtml(item.kind)}</span>
+      <span class="evidence-kind ${item.freshness === "SCENARIO" ? "scenario" : ""}">${escapeHtml(item.freshness)} · ${escapeHtml(item.kind)}</span>
       <span></span><a href="${escapeHtml(item.sourceUrl)}" target="_blank" rel="noreferrer">${escapeHtml(item.source)} ↗</a>
     </div>`).join("");
   $("#report-id").textContent = report.id;
+  $("#source-hash").textContent = shortHash(report.baseSnapshotHash);
   $("#audit-hash").textContent = shortHash(report.auditHash);
   $("#report-warning").textContent = report.warnings.length ? report.warnings.join(" · ") : "未调用任何交易接口";
   elements.report.scrollIntoView({ behavior: "smooth", block: "start" });

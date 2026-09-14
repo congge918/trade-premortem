@@ -8,17 +8,26 @@ const companyCode = Object.freeze({
 });
 
 async function fetchJson(path, timeoutMs = 15_000) {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: { Accept: "application/json", "User-Agent": "TradePremortem/0.1" },
-    signal: AbortSignal.timeout(timeoutMs)
-  });
-  if (!response.ok) throw new Error(`Bitget ${response.status} for ${path}`);
-  const payload = await response.json();
-  if (payload.code !== "00000") throw new Error(`Bitget ${payload.code}: ${payload.msg}`);
-  return payload;
+  let lastError;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await fetch(`${API_BASE}${path}`, {
+        headers: { Accept: "application/json", "User-Agent": "TradePremortem/0.1" },
+        signal: AbortSignal.timeout(timeoutMs)
+      });
+      if (!response.ok) throw new Error(`Bitget ${response.status} for ${path}`);
+      const payload = await response.json();
+      if (payload.code !== "00000") throw new Error(`Bitget ${payload.code}: ${payload.msg}`);
+      return payload;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+    }
+  }
+  throw lastError;
 }
 
-function evidence(id, title, path, payload, effectiveAt, kind = "FACT") {
+function evidence(id, title, path, payload, effectiveAt, kind = "FACT", summary = null) {
   const observedAt = new Date(Number(payload.requestTime)).toISOString();
   return {
     id,
@@ -28,7 +37,29 @@ function evidence(id, title, path, payload, effectiveAt, kind = "FACT") {
     observedAt,
     effectiveAt: effectiveAt || observedAt,
     freshness: "LIVE",
-    kind
+    kind,
+    summary
+  };
+}
+
+function isoFrom(value) {
+  if (value == null || value === "") return null;
+  const numeric = Number(value);
+  const timestamp = Number.isFinite(numeric) ? numeric : Date.parse(value);
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null;
+}
+
+function eventFromForecast(data, now) {
+  const eventAt = isoFrom(data?.publicationDeadline);
+  if (!eventAt) return null;
+  const hoursUntil = (Date.parse(eventAt) - now) / 3_600_000;
+  if (!(hoursUntil >= 0)) return null;
+  return {
+    label: `FY${data.fiscalYear || "?"} 财报预测发布截止`,
+    type: "EARNINGS",
+    severity: "HIGH",
+    hoursUntil,
+    eventAt
   };
 }
 
@@ -73,14 +104,20 @@ export async function loadLiveMarket(symbol) {
   const statePath = "/api/v3/reality/market/states";
   const calendarPath = "/api/v3/reality/market/calendar";
   const overviewPath = `/api/v3/reality/market/company-overview?code=${encodeURIComponent(code)}`;
+  const valuationPath = `/api/v3/reality/market/valuation-indicators?code=${encodeURIComponent(code)}`;
+  const forecastPath = `/api/v3/reality/market/earnings-forecast?code=${encodeURIComponent(code)}`;
+  const suspensionPath = `/api/v3/reality/market/suspension-resumption-info?code=${encodeURIComponent(code)}`;
 
-  const [instrumentPayload, tickerPayload, candlePayload, statePayload, calendarPayload, overviewResult] = await Promise.all([
+  const [instrumentPayload, tickerPayload, candlePayload, statePayload, calendarPayload, overviewResult, valuationResult, forecastResult, suspensionResult] = await Promise.all([
     fetchJson(instrumentPath),
     fetchJson(tickerPath),
     fetchJson(candlePath),
     fetchJson(statePath),
     fetchJson(calendarPath),
-    fetchJson(overviewPath).catch((error) => ({ error: error.message }))
+    fetchJson(overviewPath).catch((error) => ({ error: error.message })),
+    fetchJson(valuationPath).catch((error) => ({ error: error.message })),
+    fetchJson(forecastPath).catch((error) => ({ error: error.message })),
+    fetchJson(suspensionPath).catch((error) => ({ error: error.message }))
   ]);
   const instrument = instrumentPayload.data?.[0];
   const ticker = tickerPayload.data?.[0];
@@ -103,8 +140,45 @@ export async function loadLiveMarket(symbol) {
     evidence("market_calendar", "美股休市日历", calendarPath, calendarPayload)
   ];
   if (!overviewResult.error) {
-    outputEvidence.push(evidence("company", `${code} 公司概览`, overviewPath, overviewResult));
+    outputEvidence.push(evidence("company", `${code} 公司概览`, overviewPath, overviewResult, null, "FACT", `${overviewResult.data?.name || code} · ${overviewResult.data?.industry || "行业未提供"}`));
   }
+  if (!valuationResult.error) {
+    const valuation = valuationResult.data || {};
+    outputEvidence.push(evidence(
+      "valuation",
+      `${code} 估值指标`,
+      valuationPath,
+      valuationResult,
+      isoFrom(valuation.date),
+      "FACT",
+      `PE ${valuation.peTtmEd || valuation.pe || "—"} · PB ${valuation.pbMrq || valuation.pb || "—"}`
+    ));
+  }
+  if (!forecastResult.error) {
+    const forecast = forecastResult.data || {};
+    outputEvidence.push(evidence(
+      "earnings_forecast",
+      `${code} 盈利预测`,
+      forecastPath,
+      forecastResult,
+      isoFrom(forecast.publicationDeadline),
+      "FACT",
+      `FY${forecast.fiscalYear || "—"} · EPS ${forecast.eps || "—"} ${forecast.currency || ""}`.trim()
+    ));
+  }
+  if (!suspensionResult.error) {
+    const suspension = suspensionResult.data || {};
+    outputEvidence.push(evidence(
+      "suspension",
+      `${code} 停复牌状态`,
+      suspensionPath,
+      suspensionResult,
+      isoFrom(suspension.suspensionDate || suspension.resumptionDate),
+      "FACT",
+      suspension.suspensionDate ? `停牌：${suspension.suspensionDate}` : "未返回有效停牌记录"
+    ));
+  }
+  const optionalResults = [overviewResult, valuationResult, forecastResult, suspensionResult];
   return {
     market: {
       mode: "LIVE",
@@ -112,14 +186,17 @@ export async function loadLiveMarket(symbol) {
       candles,
       referenceClose: Number(findReferenceClose(candles)),
       session: currentSession(Number(ticker.ts), calendar),
-      event: null,
+      event: eventFromForecast(forecastResult.data, Number(ticker.ts || tickerPayload.requestTime)),
       instrument,
       states: statePayload.data,
-      company: overviewResult.data || null
+      company: overviewResult.data || null,
+      valuation: valuationResult.data || null,
+      forecast: forecastResult.data || null,
+      suspension: suspensionResult.data || null
     },
     evidence: outputEvidence,
     clockAt: capturedAt,
-    warnings: overviewResult.error ? [`公司概览暂不可用：${overviewResult.error}`] : []
+    warnings: optionalResults.flatMap((result, index) => result.error ? [`Reality 可选数据 ${index + 1} 不可用：${result.error}`] : [])
   };
 }
 

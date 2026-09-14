@@ -1,61 +1,25 @@
+import { readFileSync } from "node:fs";
 import { sha256, canonicalJson } from "./crypto.mjs";
 
-const SYMBOLS = ["RAAPLUSDT", "RNVDAUSDT", "RGOOGLUSDT", "RCOINUSDT"];
-const basePrices = { RAAPLUSDT: 231, RNVDAUSDT: 223, RGOOGLUSDT: 252, RCOINUSDT: 183 };
-const clockAt = "2026-09-10T10:00:00.000Z";
+const snapshotBundle = JSON.parse(
+  readFileSync(new URL("../data/replay-snapshots.json", import.meta.url), "utf8")
+);
+const snapshots = new Map(snapshotBundle.snapshots.map((item) => [item.symbol, item]));
+const SYMBOLS = [...snapshots.keys()];
+const scenarioSourceUrl = "https://github.com/congge918/trade-premortem/blob/main/src/replays.mjs";
 
-function seededRandom(seedText) {
-  let seed = [...seedText].reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) >>> 0, 2166136261);
-  return () => {
-    seed ^= seed << 13;
-    seed ^= seed >>> 17;
-    seed ^= seed << 5;
-    return (seed >>> 0) / 4294967296;
-  };
-}
-
-function makeCandles(symbol, count = 280) {
-  const random = seededRandom(symbol);
-  const end = Date.parse(clockAt) - 60 * 60 * 1000;
-  let close = basePrices[symbol];
-  const candles = [];
-  for (let index = count - 1; index >= 0; index -= 1) {
-    const wave = Math.sin(index / 11) * 0.0015;
-    const change = (random() - 0.5) * 0.009 + wave;
-    const open = close;
-    close = Math.max(1, open * (1 + change));
-    candles.push({
-      ts: end - index * 60 * 60 * 1000,
-      open,
-      high: Math.max(open, close) * 1.0018,
-      low: Math.min(open, close) * 0.9982,
-      close,
-      volume: 20_000 + Math.round(random() * 80_000)
-    });
-  }
-  return candles;
-}
-
-function evidenceFor(symbol, category, capturedAt) {
-  const base = `https://api.bitget.com/api/v3`;
-  const items = [
-    ["instrument", "Reality 交易产品状态", `${base}/market/instruments?category=SPOT&symbol=${symbol}`],
-    ["ticker", "rToken 实时行情", `${base}/market/tickers?category=SPOT&symbol=${symbol}`],
-    ["candles", "rToken 1 小时 K 线", `${base}/market/candles?category=SPOT&symbol=${symbol}&interval=1H&type=market`],
-    ["market_state", "美股交易时段", `${base}/reality/market/states`],
-    ["market_calendar", "美股休市日历", `${base}/reality/market/calendar`]
-  ].map(([id, title, sourceUrl]) => ({
+function scenarioEvidence(id, title, summary, observedAt, effectiveAt = observedAt) {
+  return {
     id,
     title,
-    source: "Bitget UTA v3",
-    sourceUrl,
-    observedAt: capturedAt,
-    effectiveAt: capturedAt,
-    freshness: "REPLAY",
-    kind: "FACT"
-  }));
-  if (category === "stale") items[1].effectiveAt = null;
-  return items;
+    source: "TradePremortem scenario fixture",
+    sourceUrl: scenarioSourceUrl,
+    observedAt,
+    effectiveAt,
+    freshness: "SCENARIO",
+    kind: "INFERENCE",
+    summary
+  };
 }
 
 function portfolioFor(symbol, category) {
@@ -94,14 +58,63 @@ function titleFor(symbol, category) {
 }
 
 export function buildReplay(symbol, category = "baseline") {
-  const candles = makeCandles(symbol);
-  const referenceClose = candles.at(-2).close;
-  const capturedAt = category === "stale" ? "2026-09-10T09:48:00.000Z" : "2026-09-10T09:59:00.000Z";
-  const gapMultiplier = category === "gap" ? 1.075 : 1.002;
-  const tickerPrice = referenceClose * gapMultiplier;
-  const event = category === "event"
-    ? { label: "财报更新窗口", type: "EARNINGS", severity: "HIGH", hoursUntil: 3 }
-    : null;
+  const snapshot = snapshots.get(symbol);
+  if (!snapshot) throw new TypeError("snapshot is not in the demo rToken set");
+  const clockAt = snapshot.capturedAt;
+  const market = structuredClone(snapshot.market);
+  market.mode = "REPLAY";
+  const evidence = snapshot.evidence.map((item) => ({ ...structuredClone(item), freshness: "REPLAY" }));
+  const injections = [];
+
+  if (category === "baseline" && market.session !== "REGULAR") {
+    market.session = "REGULAR";
+    injections.push(scenarioEvidence(
+      "scenario_regular_session",
+      "演示条件：常规交易时段",
+      "仅将交易时段设为 REGULAR，用于验证预算内受限通过；价格和 K 线保持采集快照。",
+      clockAt
+    ));
+  }
+  if (category === "gap") {
+    const capturedPrice = market.ticker.lastPrice;
+    market.ticker.lastPrice = market.referenceClose * 1.075;
+    injections.push(scenarioEvidence(
+      "scenario_gap",
+      "故障注入：休市价格偏离",
+      `采集价 ${capturedPrice} 被替换为参考收盘的 107.5%，仅用于压力测试。`,
+      clockAt
+    ));
+  }
+  if (category === "event") {
+    const eventAt = new Date(Date.parse(clockAt) + 3 * 3_600_000).toISOString();
+    market.event = {
+      label: "演示假设：3 小时后进入财报更新窗口",
+      type: "EARNINGS",
+      severity: "HIGH",
+      hoursUntil: 3,
+      eventAt
+    };
+    injections.push(scenarioEvidence(
+      "scenario_event",
+      "演示假设：财报事件窗口",
+      "该事件是明确标记的情景假设，不代表 Bitget 返回了实际公司事件。",
+      clockAt,
+      eventAt
+    ));
+  }
+  if (category === "stale") {
+    const staleAt = new Date(Date.parse(clockAt) - 12 * 60_000).toISOString();
+    market.ticker.capturedAt = staleAt;
+    const tickerEvidence = evidence.find((item) => item.id === "ticker");
+    if (tickerEvidence) tickerEvidence.effectiveAt = null;
+    injections.push(scenarioEvidence(
+      "scenario_stale",
+      "故障注入：过期且缺失有效时间",
+      "将 ticker 调整为 12 分钟前，并移除对应证据的 effectiveAt，用于验证 fail-closed。",
+      clockAt
+    ));
+  }
+
   const proposal = {
     symbol,
     side: "BUY",
@@ -121,15 +134,10 @@ export function buildReplay(symbol, category = "baseline") {
     symbol,
     clockAt,
     proposal,
-    market: {
-      mode: "REPLAY",
-      ticker: { lastPrice: tickerPrice, capturedAt },
-      candles,
-      referenceClose,
-      session: category === "baseline" ? "REGULAR" : "OVERNIGHT",
-      event
-    },
-    evidence: evidenceFor(symbol, category, capturedAt)
+    market,
+    evidence: [...evidence, ...injections],
+    baseSnapshotHash: snapshot.normalizedSourceHash,
+    scenarioInjections: injections.map((item) => item.id)
   };
   return { ...output, snapshotHash: sha256(canonicalJson(output)) };
 }
@@ -147,12 +155,14 @@ const publicReplays = [
 ];
 
 export function listPublicReplays() {
-  return publicReplays.map(({ id, title, category, symbol, snapshotHash, proposal }) => ({
+  return publicReplays.map(({ id, title, category, symbol, snapshotHash, baseSnapshotHash, scenarioInjections, proposal }) => ({
     id,
     title,
     category,
     symbol,
     snapshotHash,
+    baseSnapshotHash,
+    scenarioInjections,
     proposal
   }));
 }

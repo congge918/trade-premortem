@@ -155,6 +155,12 @@
               <svg id="price-chart" viewBox="0 0 720 180" role="img" aria-label="价格回放折线图"></svg>
             </article>
 
+            <article class="analog-card">
+              <div class="card-title"><span>历史相似失败场景</span><small>状态变化 + 波动率匹配</small></div>
+              <div id="analog-list" class="analog-list"></div>
+              <p class="analog-note">仅检索当时可见的历史窗口，并展示其后同持有期表现；这是压力类比，不是收益预测。</p>
+            </article>
+
             <div class="report-columns">
               <article class="gate-card">
                 <div class="card-title"><span>压力闸门</span><small>规则引擎</small></div>
@@ -177,6 +183,7 @@
 
             <article class="audit-card">
               <span>REPORT ID <code id="report-id">—</code></span>
+              <span>SOURCE SHA-256 <code id="source-hash">—</code></span>
               <span>AUDIT SHA-256 <code id="audit-hash">—</code></span>
               <span id="report-warning">未调用任何交易接口</span>
             </article>
@@ -190,7 +197,7 @@
           <h2 id="method-title">AI 可以质疑，<br>不能篡改判决。</h2>
         </div>
         <div class="method-copy">
-          <p>Bitget 数据进入带时间戳的证据账本；确定性引擎计算持有期收益分布、P1/P5 不利波动、最大仓位与 MAD 偏离；最后才由模型生成反方论点。</p>
+          <p>Bitget 数据进入带时间戳的证据账本；确定性引擎检索历史相似窗口，计算持有期收益分布、P1/P5 不利波动、最大仓位与 MAD 偏离；最后才由模型生成反方论点。</p>
           <p>任何证据窗口不足、行情超过 5 分钟或关键时间戳缺失，系统都停止在 <code>INSUFFICIENT_EVIDENCE</code>。这不是交易建议，也不会替代人的判断。</p>
         </div>
       </section>
