@@ -81,7 +81,18 @@ function responseText(payload) {
       if (typeof content.text === "string") return content.text;
     }
   }
+  if (typeof payload.choices?.[0]?.message?.content === "string") {
+    return payload.choices[0].message.content;
+  }
   return "";
+}
+
+function parseQwenJson(text) {
+  const value = String(text || "").trim();
+  const start = value.indexOf("{");
+  const end = value.lastIndexOf("}");
+  if (start < 0 || end < start) throw new Error("Qwen returned non-JSON text");
+  return JSON.parse(value.slice(start, end + 1));
 }
 
 export async function explainWithQwen(result) {
@@ -108,7 +119,7 @@ export async function explainWithQwen(result) {
     });
     if (!response.ok) throw new Error(`Qwen HTTP ${response.status}`);
     const payload = await response.json();
-    const parsed = JSON.parse(responseText(payload) || "{}");
+    const parsed = parseQwenJson(responseText(payload));
     if (
       typeof parsed.strongestCounterargument !== "string" ||
       !Array.isArray(parsed.hiddenAssumptions) ||
@@ -118,6 +129,7 @@ export async function explainWithQwen(result) {
     return { provider: `Bitget Qwen · ${model}`, generated: true, ...parsed };
   } catch (error) {
     const timedOut = error?.name === "TimeoutError" || /aborted|timeout/i.test(error?.message || "");
+    console.warn(`[qwen] ${timedOut ? "timeout" : error?.message || "unknown error"}`);
     const warning = timedOut
       ? "Qwen 响应超时，已显示规则生成的说明。"
       : "Qwen 暂时不可用，已显示规则生成的说明。";
@@ -125,4 +137,4 @@ export async function explainWithQwen(result) {
   }
 }
 
-export { fallbackNarrative, qwenConfig, responseText };
+export { fallbackNarrative, parseQwenJson, qwenConfig, responseText };

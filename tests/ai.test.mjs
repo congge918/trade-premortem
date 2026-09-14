@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { QWEN_TIMEOUT_MS, explainWithQwen, qwenConfig, responseText } from "../src/ai.mjs";
+import { QWEN_TIMEOUT_MS, explainWithQwen, parseQwenJson, qwenConfig, responseText } from "../src/ai.mjs";
 
 const result = {
   verdict: "WAIT",
@@ -87,4 +87,15 @@ test("Qwen Responses payload is parsed without changing the verdict", async () =
 
 test("responseText supports the Responses API output_text shortcut", () => {
   assert.equal(responseText({ output_text: "{\"ok\":true}" }), "{\"ok\":true}");
+});
+
+test("Qwen JSON parser accepts reasoning text and fenced output", () => {
+  assert.deepEqual(
+    parseQwenJson("<think>checked evidence</think>\n```json\n{\"ok\":true}\n```"),
+    { ok: true }
+  );
+});
+
+test("responseText also accepts a chat-completions shaped response", () => {
+  assert.equal(responseText({ choices: [{ message: { content: "{\"ok\":true}" } }] }), "{\"ok\":true}");
 });
