@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { explainWithQwen } from "./ai.mjs";
+import { explainWithQwen, fallbackNarrative, qwenConfig } from "./ai.mjs";
 import { loadLiveMarket } from "./bitget.mjs";
 import { evaluateStressTest, validateProposal } from "./engine.mjs";
 import { buildReplay, getReplay, listPublicReplays } from "./replays.mjs";
@@ -37,7 +37,8 @@ export async function createStressTest(body) {
     evidence: context.evidence,
     clockAt: context.clockAt
   });
-  const ai = await explainWithQwen(result);
+  const aiPending = Boolean(qwenConfig().apiKey);
+  const ai = { ...fallbackNarrative(result), pending: aiPending };
   const report = {
     id: randomUUID(),
     createdAt: new Date().toISOString(),
@@ -46,11 +47,20 @@ export async function createStressTest(body) {
     snapshotHash: context.snapshotHash || null,
     baseSnapshotHash: context.baseSnapshotHash || null,
     scenarioInjections: context.scenarioInjections || [],
-    warnings: [...(context.warnings || []), ...warnings, ...(ai.warning ? [ai.warning] : [])],
+    warnings: [...(context.warnings || []), ...warnings],
     ...result,
     ai
   };
-  return save(report);
+  save(report);
+  if (aiPending) {
+    void explainWithQwen(result).then((completedAi) => {
+      const saved = reports.get(report.id);
+      if (!saved) return;
+      saved.ai = { ...completedAi, pending: false };
+      if (completedAi.warning) saved.warnings.push(completedAi.warning);
+    });
+  }
+  return report;
 }
 
 export function findStressTest(id) {

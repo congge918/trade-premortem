@@ -4,10 +4,13 @@
 
 > 发布时附上不超过 3 分钟的演示视频；这一条即可作为提交表中的 X 项目介绍链接。发布前确认 Demo 可访问。
 
-TradePremortem 是面向 Bitget rToken 的交易前失败预演台：用带时间戳的 Bitget 数据检索历史相似场景，计算 P1/P5 压力亏损与组合集中度；证据过期就拒答。Qwen 只寻找反证，不能改判决。无钱包、无下单。
+周末 rNVDA 还在交易。现在追进去，最坏会亏多少？
 
-Demo: https://trade-premortem.onrender.com
-Code: https://github.com/congge918/trade-premortem
+TradePremortem 用 Bitget 数据回看相似行情，算出压力亏损和金额上限，再让 Qwen 找出反方风险。仓位过重就让你等，数据过期就拒绝回答。
+
+来试试它会不会拦住你的交易
+https://trade-premortem.onrender.com
+
 @Bitget_AI #BitgetHackathon
 
 ## 立项帖

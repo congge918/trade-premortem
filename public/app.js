@@ -20,35 +20,40 @@ const elements = {
 
 let replays = [];
 let activeReplayId = null;
+let activeReportId = null;
+let pollGeneration = 0;
 
 const verdictCopy = {
   PROCEED_WITH_LIMITS: {
-    title: "受限通过",
+    title: "可以继续研究",
     stamp: "LIMITED",
-    summary: "当前证据允许在计算出的仓位上限内继续研究；这不是买入建议。",
+    summary: "风险仍在你设定的亏损范围内。若继续，交易金额不要超过系统给出的上限。",
     className: "safe"
   },
   WAIT: {
-    title: "暂缓交易",
+    title: "先别下单",
     stamp: "WAIT",
-    summary: "至少一个压力闸门被击穿。先降低风险或等待新证据，再由人类决定。",
+    summary: "当前计划超过了至少一项风险限制。先减少金额或等待新数据，再重新检查。",
     className: ""
   },
   INSUFFICIENT_EVIDENCE: {
-    title: "证据不足",
+    title: "先补数据",
     stamp: "NO VERDICT",
-    summary: "证据无法满足时效或完整性要求。系统拒绝把缺失数据包装成结论。",
+    summary: "行情过期或关键信息缺失，系统无法可靠判断。更新数据后再试。",
     className: "insufficient"
   }
 };
 
 const checkNames = {
-  data_quality: "证据质量",
-  risk_budget: "亏损预算",
-  concentration: "组合集中度",
-  session_gap: "休市偏离",
-  event_risk: "公司事件"
+  data_quality: "数据是否够用",
+  risk_budget: "亏损是否超出预算",
+  concentration: "持仓是否过于集中",
+  session_gap: "休市价格是否异常",
+  event_risk: "近期是否有公司事件"
 };
+
+const freshnessNames = { LIVE: "实时", FRESH: "最新", REPLAY: "回放", SCENARIO: "情景", STALE: "过期" };
+const evidenceKindNames = { FACT: "事实", INFERENCE: "推断" };
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>'"]/g, (char) => ({
@@ -100,7 +105,7 @@ function applyReplay(replay, run = false) {
 }
 
 function renderReplayButtons() {
-  const labelByCategory = { concentration: "组合过载", gap: "休市偏离", baseline: "受限通过", stale: "过期拒答", event: "事件窗口" };
+  const labelByCategory = { concentration: "科技股仓位太重", gap: "休市追高", baseline: "风险在预算内", stale: "行情已过期", event: "财报临近" };
   elements.scenarioButtons.innerHTML = replays.map((replay) =>
     `<button type="button" class="scenario-chip" data-id="${escapeHtml(replay.id)}">${escapeHtml(labelByCategory[replay.category] || replay.title)}</button>`
   ).join("");
@@ -159,7 +164,61 @@ function drawChart(prices, referenceClose) {
     <text class="chart-label" x="${width - 136}" y="${Math.max(13, y(referenceClose) - 6)}">参考收盘 ${referenceClose.toFixed(2)}</text>`;
 }
 
+function renderWarnings(report) {
+  $("#report-warning").textContent = report.warnings?.length
+    ? report.warnings.join(" · ")
+    : "只生成研究报告，不连接钱包，也不会下单";
+}
+
+function renderAi(report) {
+  const pending = Boolean(report.ai.pending);
+  $("#ai-provider").textContent = pending
+    ? "Qwen 正在寻找反方理由…"
+    : report.ai.generated
+      ? report.ai.provider
+      : "规则生成 · 模型未参与";
+  $("#counterargument").textContent = pending
+    ? "风险结果已经生成。Qwen 正在补充反方理由，不影响上方计算。"
+    : report.ai.strongestCounterargument;
+  $("#assumption-list").innerHTML = report.ai.hiddenAssumptions.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  $("#falsifier-list").innerHTML = report.ai.falsifiers.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+}
+
+function checkDetail(check, report) {
+  if (check.id === "data_quality" && check.passed) return "价格、历史样本和采集时间都可用";
+  if (check.id === "risk_budget" && Number.isFinite(report.metrics.recommendedMaxNotional)) {
+    return `按亏损预算，金额上限是 ${formatMoney(report.metrics.recommendedMaxNotional)}`;
+  }
+  if (check.id === "concentration") return `交易后，同类资产占 ${formatPercent(report.metrics.sectorConcentration)}`;
+  if (check.id === "session_gap" && Number.isFinite(report.metrics.offSessionMadScore)) {
+    return `当前偏离为正常波动的 ${report.metrics.offSessionMadScore.toFixed(2)} 倍`;
+  }
+  return check.detail;
+}
+
+async function pollAi(reportId, generation) {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
+    if (generation !== pollGeneration || reportId !== activeReportId) return;
+    try {
+      const response = await fetch(`/api/stress-tests/${encodeURIComponent(reportId)}`);
+      if (!response.ok) return;
+      const payload = await response.json();
+      const report = payload.data;
+      if (!report?.ai?.pending) {
+        renderAi(report);
+        renderWarnings(report);
+        return;
+      }
+    } catch {
+      return;
+    }
+  }
+}
+
 function renderReport(report) {
+  activeReportId = report.id;
+  const generation = ++pollGeneration;
   const copy = verdictCopy[report.verdict];
   elements.empty.hidden = true;
   elements.report.hidden = false;
@@ -171,40 +230,38 @@ function renderReport(report) {
   stamp.textContent = copy.stamp;
   stamp.className = `verdict-stamp ${copy.className}`;
   $("#metric-loss").textContent = formatMoney(report.metrics.stressLossUsdt);
-  $("#metric-p1").textContent = `P1 不利波动 ${formatPercent(report.metrics.p1LossRate)}`;
+  $("#metric-p1").textContent = `历史最差 1% 波动 ${formatPercent(report.metrics.p1LossRate)}`;
   $("#metric-limit").textContent = formatMoney(report.metrics.recommendedMaxNotional);
   $("#metric-concentration").textContent = formatPercent(report.metrics.sectorConcentration);
-  $("#metric-mad").textContent = Number.isFinite(report.metrics.offSessionMadScore) ? `${report.metrics.offSessionMadScore.toFixed(2)} MAD` : "—";
-  $("#chart-caption").textContent = `${report.market.symbol} · ${report.market.session} · 最近 64 个一小时收盘`;
+  $("#metric-mad").textContent = Number.isFinite(report.metrics.offSessionMadScore) ? `${report.metrics.offSessionMadScore.toFixed(2)} 倍` : "—";
+  $("#chart-caption").textContent = `${report.market.symbol} · ${report.market.session} · 最近 64 个小时收盘价`;
   drawChart(report.market.sparkline, report.market.referenceClose);
   const historicalAnalogs = report.historicalAnalogs || [];
   $("#analog-list").innerHTML = historicalAnalogs.length
     ? historicalAnalogs.map((item, index) => `
       <div class="analog-row">
         <span class="index">${String(index + 1).padStart(2, "0")}</span>
-        <div><strong>${escapeHtml(formatDateTime(item.anchorAt))}</strong><small>当时状态变化 ${formatPercent(item.stateMove)}</small></div>
+        <div><strong>${escapeHtml(formatDateTime(item.anchorAt))}</strong><small>当时价格变化 ${formatPercent(item.stateMove)}</small></div>
         <div><span>相似度</span><b>${formatPercent(item.similarity)}</b></div>
-        <div><span>后续 ${report.proposal.horizonHours}H</span><b class="${item.forwardReturn < 0 ? "negative" : ""}">${formatPercent(item.forwardReturn)}</b></div>
+        <div><span>之后 ${report.proposal.horizonHours} 小时</span><b class="${item.forwardReturn < 0 ? "negative" : ""}">${formatPercent(item.forwardReturn)}</b></div>
       </div>`).join("")
     : '<p class="empty-copy">历史窗口不足，无法生成相似场景。</p>';
   $("#check-list").innerHTML = report.checks.map((check) => `
-    <li><span class="check-icon ${check.passed ? "" : "fail"}">${check.passed ? "✓" : "×"}</span><b>${escapeHtml(checkNames[check.id] || check.id)}</b><small>${escapeHtml(check.detail)}</small></li>`).join("");
-  $("#ai-provider").textContent = report.ai.generated ? report.ai.provider : "规则回退 · 未调用模型";
-  $("#counterargument").textContent = report.ai.strongestCounterargument;
-  $("#assumption-list").innerHTML = report.ai.hiddenAssumptions.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-  $("#falsifier-list").innerHTML = report.ai.falsifiers.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+    <li><span class="check-icon ${check.passed ? "" : "fail"}">${check.passed ? "✓" : "×"}</span><b>${escapeHtml(checkNames[check.id] || check.id)}</b><small>${escapeHtml(checkDetail(check, report))}</small></li>`).join("");
+  renderAi(report);
   $("#evidence-list").innerHTML = report.evidence.map((item, index) => `
     <div class="evidence-row">
       <span class="index">${String(index + 1).padStart(2, "0")}</span>
       <div class="evidence-name"><strong>${escapeHtml(item.title)}</strong>${item.summary ? `<small>${escapeHtml(item.summary)}</small>` : ""}</div>
       <time datetime="${escapeHtml(item.observedAt || "")}">${item.observedAt ? escapeHtml(new Date(item.observedAt).toLocaleString("zh-CN", { hour12: false })) : "时间缺失"}</time>
-      <span class="evidence-kind ${item.freshness === "SCENARIO" ? "scenario" : ""}">${escapeHtml(item.freshness)} · ${escapeHtml(item.kind)}</span>
+      <span class="evidence-kind ${item.freshness === "SCENARIO" ? "scenario" : ""}">${escapeHtml(freshnessNames[item.freshness] || item.freshness)} · ${escapeHtml(evidenceKindNames[item.kind] || item.kind)}</span>
       <span></span><a href="${escapeHtml(item.sourceUrl)}" target="_blank" rel="noreferrer">${escapeHtml(item.source)} ↗</a>
     </div>`).join("");
   $("#report-id").textContent = report.id;
   $("#source-hash").textContent = shortHash(report.baseSnapshotHash);
   $("#audit-hash").textContent = shortHash(report.auditHash);
-  $("#report-warning").textContent = report.warnings.length ? report.warnings.join(" · ") : "未调用任何交易接口";
+  renderWarnings(report);
+  if (report.ai.pending) void pollAi(report.id, generation);
   elements.report.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -212,7 +269,7 @@ async function runAnalysis(event) {
   event?.preventDefault();
   elements.error.textContent = "";
   elements.submit.disabled = true;
-  elements.submit.firstElementChild.textContent = "正在审讯证据…";
+  elements.submit.firstElementChild.textContent = "正在计算风险…";
   try {
     const response = await fetch("/api/stress-tests", {
       method: "POST",
@@ -226,7 +283,7 @@ async function runAnalysis(event) {
     elements.error.textContent = error.message;
   } finally {
     elements.submit.disabled = false;
-    elements.submit.firstElementChild.textContent = "运行压力测试";
+    elements.submit.firstElementChild.textContent = "检查这笔交易";
   }
 }
 

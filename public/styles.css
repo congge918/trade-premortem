@@ -234,8 +234,8 @@ footer { display: flex; justify-content: space-between; gap: 24px; padding: 26px
   .workbench { margin: 36px auto; }
   .intake-panel, .report-panel { padding: 20px; }
   .field-row.two, .field-row.three { grid-template-columns: 1fr; gap: 0; }
-  .verdict-card { min-height: 230px; }
-  .verdict-card > div:first-child { max-width: 100%; }
+  .verdict-card { min-height: 275px; }
+  .verdict-card > div:first-child { max-width: 100%; padding-bottom: 82px; }
   .verdict-stamp { top: auto; bottom: 15px; right: -8px; }
   .metric-grid, .report-columns { grid-template-columns: 1fr; }
   .metric-grid article { border-right: 0; border-bottom: 1px solid var(--line); }

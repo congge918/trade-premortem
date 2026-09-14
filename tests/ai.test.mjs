@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { explainWithQwen, qwenConfig, responseText } from "../src/ai.mjs";
+import { QWEN_TIMEOUT_MS, explainWithQwen, qwenConfig, responseText } from "../src/ai.mjs";
 
 const result = {
   verdict: "WAIT",
@@ -17,6 +17,7 @@ const result = {
 };
 
 test("Qwen defaults match the Bitget hackathon provider", () => {
+  assert.equal(QWEN_TIMEOUT_MS, 45_000);
   const previous = {
     BITGET_QWEN_API_KEY: process.env.BITGET_QWEN_API_KEY,
     QWEN_API_KEY: process.env.QWEN_API_KEY,

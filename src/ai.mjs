@@ -1,23 +1,40 @@
+export const QWEN_TIMEOUT_MS = 45_000;
+
+function fallbackCounterargument(result, top, p1) {
+  const metrics = result.metrics;
+  if (!top) return `历史最差 1% 情况下，价格波动约为 ${p1}。风险仍然存在。`;
+  if (top.code === "RISK_BUDGET") {
+    return `历史极端情况下可能亏损 ${metrics.stressLossUsdt.toFixed(2)} USDT，超过你设定的 ${result.proposal.riskBudgetUsdt.toFixed(2)} USDT。`;
+  }
+  if (top.code === "CONCENTRATION") {
+    return `交易完成后，同类资产会占组合的 ${(metrics.sectorConcentration * 100).toFixed(1)}%，风险过于集中。`;
+  }
+  if (top.code === "STALE_TICKER") return "价格数据已经过期，当前风险无法可靠判断。";
+  if (top.code === "WINDOWS") return "可用的历史样本太少，暂时无法计算极端风险。";
+  if (top.code === "MISSING_TIME") return "关键数据缺少采集时间，暂时无法确认它是否仍然有效。";
+  if (top.code === "OFF_SESSION_GAP") return `休市价格偏离达到历史正常波动的 ${metrics.offSessionMadScore.toFixed(2)} 倍。`;
+  if (top.code === "EVENT_RISK") return "公司事件就在计划持有期内，价格可能出现额外波动。";
+  return top.detail;
+}
+
 function fallbackNarrative(result) {
   const top = result.reasons[0];
   const p1 = result.metrics.p1LossRate == null ? "无法计算" : `${(result.metrics.p1LossRate * 100).toFixed(2)}%`;
   return {
     provider: "DETERMINISTIC_FALLBACK",
     generated: false,
-    strongestCounterargument: top
-      ? `${top.label}：${top.detail}`
-      : `即使当前闸门通过，历史 P1 不利波动仍达到 ${p1}，这不是收益保证。`,
+    strongestCounterargument: fallbackCounterargument(result, top, p1),
     hiddenAssumptions: [
-      "rToken 的历史波动分布能代表拟议持有期",
-      "现有组合名义金额能近似表达集中度",
-      "当前证据在人工决策前没有发生实质变化"
+      "过去的波动能代表你计划持有的这段时间",
+      "填写的持仓金额足以反映真实的集中风险",
+      "你下单前，价格和公司信息不会明显变化"
     ],
     falsifiers: [
-      "Bitget 最新行情或公司事件数据发生显著变化",
-      "压力亏损重新计算后超过用户预算",
-      "市场恢复常规交易后偏离没有收敛"
+      "Bitget 行情或公司信息出现明显变化",
+      "减少交易金额后，压力亏损回到预算以内",
+      "恢复常规交易后，价格偏离仍没有收窄"
     ],
-    humanPrompt: "请先核对证据时间与仓位上限，再由你决定是否继续；系统不会下单。"
+    humanPrompt: "先核对数据时间和金额上限，再决定是否继续。系统不会替你下单。"
   };
 }
 
@@ -87,7 +104,7 @@ export async function explainWithQwen(result) {
           { role: "user", content: [{ type: "input_text", text: promptFor(result) }] }
         ]
       }),
-      signal: AbortSignal.timeout(15_000)
+      signal: AbortSignal.timeout(QWEN_TIMEOUT_MS)
     });
     if (!response.ok) throw new Error(`Qwen HTTP ${response.status}`);
     const payload = await response.json();
@@ -100,7 +117,11 @@ export async function explainWithQwen(result) {
     ) throw new Error("Qwen returned an invalid shape");
     return { provider: `Bitget Qwen · ${model}`, generated: true, ...parsed };
   } catch (error) {
-    return { ...fallbackNarrative(result), warning: `千问调用失败，已使用确定性说明：${error.message}` };
+    const timedOut = error?.name === "TimeoutError" || /aborted|timeout/i.test(error?.message || "");
+    const warning = timedOut
+      ? "Qwen 响应超时，已显示规则生成的说明。"
+      : "Qwen 暂时不可用，已显示规则生成的说明。";
+    return { ...fallbackNarrative(result), warning };
   }
 }
 

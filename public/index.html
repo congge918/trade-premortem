@@ -3,11 +3,11 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="TradePremortem：面向 Bitget rToken 的证据优先交易失败预演台。">
-    <title>TradePremortem — rToken 交易失败预演台</title>
+    <meta name="description" content="TradePremortem 帮你在买入 rToken 前，看清最坏情况和金额上限。">
+    <title>TradePremortem | 下单前先看看会怎么输</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%2317242d'/%3E%3Cpath d='M14 17h36M32 17v32' stroke='%23f2f4f1' stroke-width='6'/%3E%3Ccircle cx='45' cy='43' r='9' fill='none' stroke='%23b84c38' stroke-width='4'/%3E%3C/svg%3E">
-    <link rel="stylesheet" href="/styles.css">
-    <script type="module" src="/app.js"></script>
+    <link rel="stylesheet" href="/styles.css?v=20260914-2">
+    <script type="module" src="/app.js?v=20260914-2"></script>
   </head>
   <body>
     <a class="skip-link" href="#workbench">跳到压力测试</a>
@@ -26,46 +26,46 @@
       <section class="hero" aria-labelledby="hero-title">
         <div class="hero-copy">
           <p class="eyebrow">Bitget Base Camp S2 · Case file 001</p>
-          <h1 id="hero-title">先假设这笔交易<br><em>已经失败。</em></h1>
-          <p class="hero-lede">不是替你预测涨跌。我们把拟议的 rToken 交易放进历史极端波动、休市偏离、公司事件与组合集中度中，寻找最有可能推翻它的证据。</p>
+          <h1 id="hero-title">下单前，先看看这笔交易<br><em>会怎么输。</em></h1>
+          <p class="hero-lede">准备买入 rNVDA？先写清金额、持有时间和最多能亏多少。系统会用 Bitget 数据回看相似行情，告诉你这笔交易最可能在哪里出问题。</p>
           <div class="hero-actions">
-            <a class="button primary" href="#proposal">开始失败预演</a>
-            <button class="button ghost" id="load-stale" type="button">看系统如何拒答</button>
+            <a class="button primary" href="#proposal">检查这笔交易</a>
+            <button class="button ghost" id="load-stale" type="button">试试数据过期时会怎样</button>
           </div>
         </div>
         <div class="case-diagram" aria-label="压力测试工作流">
           <span class="diagram-label">THE CROSS-EXAMINATION</span>
           <ol>
-            <li><span>01</span><strong>你的交易论点</strong><small>人类提出假设与亏损预算</small></li>
-            <li><span>02</span><strong>Bitget 事实层</strong><small>rToken 行情、K 线、市场状态</small></li>
-            <li><span>03</span><strong>确定性压力闸门</strong><small>P1 / P5、MAD、组合暴露</small></li>
-            <li><span>04</span><strong>AI 反方审讯</strong><small>隐藏假设、反证与改判条件</small></li>
+            <li><span>01</span><strong>填交易计划</strong><small>标的、金额、持有时间、亏损上限</small></li>
+            <li><span>02</span><strong>查 Bitget 数据</strong><small>价格、K 线、交易时段、公司信息</small></li>
+            <li><span>03</span><strong>计算最坏情况</strong><small>压力亏损、金额上限、持仓集中度</small></li>
+            <li><span>04</span><strong>寻找反方理由</strong><small>哪些假设站不住，什么情况要等待</small></li>
           </ol>
           <div class="human-seal">HUMAN<br>DECIDES</div>
         </div>
       </section>
 
       <section class="proof-strip" aria-label="产品边界">
-        <span><b>01</b> 无下单接口</span>
-        <span><b>02</b> 证据逐条带时间</span>
-        <span><b>03</b> 规则计算不可被 AI 覆盖</span>
-        <span><b>04</b> 数据不足时拒绝结论</span>
+        <span><b>01</b> 不连接钱包</span>
+        <span><b>02</b> 每条数据都能追溯</span>
+        <span><b>03</b> AI 不能改风险计算</span>
+        <span><b>04</b> 数据不够就不下结论</span>
       </section>
 
       <section class="workbench" id="workbench">
         <aside class="intake-panel" id="proposal">
           <div class="section-heading">
-            <span>INPUT / 拟议交易</span>
+            <span>INPUT / 准备做的交易</span>
             <span class="case-number">CASE 001</span>
           </div>
 
-          <div class="source-toggle" role="group" aria-label="数据来源">
-            <button type="button" class="source-button" id="use-live">实时 Bitget</button>
-            <button type="button" class="source-button active" id="use-replay">可复现回放</button>
+          <div class="source-toggle" role="group" aria-label="选择数据">
+            <button type="button" class="source-button" id="use-live">最新 Bitget 数据</button>
+            <button type="button" class="source-button active" id="use-replay">演示回放</button>
           </div>
 
           <div class="scenario-rack">
-            <p>快速案例</p>
+            <p>一键体验</p>
             <div id="scenario-buttons" class="scenario-buttons" aria-live="polite"></div>
           </div>
 
@@ -87,13 +87,13 @@
               </label>
             </div>
             <div class="field-row three">
-              <label>名义金额<small>USDT</small>
+              <label>准备交易金额<small>USDT</small>
                 <input id="notional" name="notional" type="number" min="10" step="10" value="1000" required>
               </label>
-              <label>最大亏损<small>USDT</small>
+              <label>最多能承受亏损<small>USDT</small>
                 <input id="risk-budget" name="riskBudget" type="number" min="1" step="1" value="25" required>
               </label>
-              <label>持有周期<small>小时</small>
+              <label>计划持有多久<small>小时</small>
                 <select id="horizon" name="horizon">
                   <option value="1">1 H</option>
                   <option value="4">4 H</option>
@@ -101,11 +101,11 @@
                 </select>
               </label>
             </div>
-            <label>你的交易论点
+            <label>为什么想做这笔交易
               <textarea id="thesis" name="thesis" rows="4" minlength="12" maxlength="800" required>美股常规盘之外出现新信息，计划立即建立仓位捕捉可能的价格重估。</textarea>
             </label>
             <details class="portfolio-editor">
-              <summary>现有组合样本 <span>JSON · 可编辑</span></summary>
+              <summary>已有持仓样本 <span>JSON · 可编辑</span></summary>
               <textarea id="portfolio" rows="7" spellcheck="false">[
   {"symbol":"RAAPLUSDT","notionalUsdt":700},
   {"symbol":"RNVDAUSDT","notionalUsdt":500},
@@ -115,22 +115,22 @@
             </details>
             <p class="form-error" id="form-error" role="alert"></p>
             <button class="button analyze-button" id="analyze-button" type="submit">
-              <span>运行压力测试</span><span aria-hidden="true">→</span>
+              <span>检查这笔交易</span><span aria-hidden="true">→</span>
             </button>
-            <p class="boundary-note">本操作只生成研究报告，不会连接钱包或发送订单。</p>
+            <p class="boundary-note">只生成风险检查报告，不连接钱包，也不会下单。</p>
           </form>
         </aside>
 
         <section class="report-panel" aria-labelledby="report-title">
           <div class="section-heading">
-            <span id="report-title">OUTPUT / 失败预演判决</span>
+            <span id="report-title">OUTPUT / 风险检查结果</span>
             <span id="report-mode" class="mode-badge replay">REPLAY</span>
           </div>
 
           <div id="report-empty" class="report-empty">
             <div class="scan-lines" aria-hidden="true"></div>
-            <p>等待证据进入审讯台</p>
-            <small>选择一个案例，或使用实时 Bitget 数据运行测试。</small>
+            <p>填好交易计划后开始检查</p>
+            <small>可以选择演示案例，也可以读取最新 Bitget 数据。</small>
           </div>
 
           <div id="report" class="report" hidden aria-live="polite">
@@ -144,40 +144,40 @@
             </article>
 
             <div class="metric-grid">
-              <article><span>历史 P1 压力亏损</span><strong id="metric-loss">—</strong><small id="metric-p1">—</small></article>
-              <article><span>建议金额上限</span><strong id="metric-limit">—</strong><small>由亏损预算反推</small></article>
-              <article><span>板块集中度</span><strong id="metric-concentration">—</strong><small>阈值 45%</small></article>
-              <article><span>休市偏离</span><strong id="metric-mad">—</strong><small>阈值 2.50 MAD</small></article>
+              <article><span>历史极端情况下可能亏损</span><strong id="metric-loss">—</strong><small id="metric-p1">—</small></article>
+              <article><span>按亏损预算计算的金额上限</span><strong id="metric-limit">—</strong><small>金额再大就会超出预算</small></article>
+              <article><span>交易后板块占比</span><strong id="metric-concentration">—</strong><small>超过 45% 会触发等待</small></article>
+              <article><span>休市价格异常程度</span><strong id="metric-mad">—</strong><small>超过正常波动 2.50 倍需要等待</small></article>
             </div>
 
             <article class="chart-card">
-              <div class="card-title"><span>rToken 价格证据</span><small id="chart-caption">最近 64 个一小时收盘</small></div>
+              <div class="card-title"><span>这次分析使用的价格</span><small id="chart-caption">最近 64 个小时收盘价</small></div>
               <svg id="price-chart" viewBox="0 0 720 180" role="img" aria-label="价格回放折线图"></svg>
             </article>
 
             <article class="analog-card">
-              <div class="card-title"><span>历史相似失败场景</span><small>状态变化 + 波动率匹配</small></div>
+              <div class="card-title"><span>历史上最像的 3 次行情</span><small>按价格变化和波动水平匹配</small></div>
               <div id="analog-list" class="analog-list"></div>
-              <p class="analog-note">仅检索当时可见的历史窗口，并展示其后同持有期表现；这是压力类比，不是收益预测。</p>
+              <p class="analog-note">后续表现只用来展示风险，不代表未来会重复。</p>
             </article>
 
             <div class="report-columns">
               <article class="gate-card">
-                <div class="card-title"><span>压力闸门</span><small>规则引擎</small></div>
+                <div class="card-title"><span>为什么得出这个结果</span><small>规则计算</small></div>
                 <ul id="check-list" class="check-list"></ul>
               </article>
               <article class="ai-card">
-                <div class="card-title"><span>反方审讯</span><small id="ai-provider">AI</small></div>
+                <div class="card-title"><span>最强反方理由</span><small id="ai-provider">AI</small></div>
                 <blockquote id="counterargument"></blockquote>
-                <h3>隐藏假设</h3>
+                <h3>这笔交易依赖哪些假设</h3>
                 <ul id="assumption-list"></ul>
-                <h3>改判条件</h3>
+                <h3>出现什么情况需要重新判断</h3>
                 <ul id="falsifier-list"></ul>
               </article>
             </div>
 
             <article class="evidence-card">
-              <div class="card-title"><span>证据脊柱</span><small>事实与时间戳</small></div>
+              <div class="card-title"><span>本次分析用了哪些数据</span><small>来源与采集时间</small></div>
               <div id="evidence-list" class="evidence-list"></div>
             </article>
 
@@ -194,11 +194,11 @@
       <section class="method" aria-labelledby="method-title">
         <div>
           <p class="eyebrow">METHOD / 可复核方法</p>
-          <h2 id="method-title">AI 可以质疑，<br>不能篡改判决。</h2>
+          <h2 id="method-title">先算风险，<br>再让 AI 挑错。</h2>
         </div>
         <div class="method-copy">
-          <p>Bitget 数据进入带时间戳的证据账本；确定性引擎检索历史相似窗口，计算持有期收益分布、P1/P5 不利波动、最大仓位与 MAD 偏离；最后才由模型生成反方论点。</p>
-          <p>任何证据窗口不足、行情超过 5 分钟或关键时间戳缺失，系统都停止在 <code>INSUFFICIENT_EVIDENCE</code>。这不是交易建议，也不会替代人的判断。</p>
+          <p>系统先用带时间戳的 Bitget 数据计算历史压力亏损、金额上限、持仓集中度和休市价格偏离，再让模型检查交易理由里有哪些站不住的假设。</p>
+          <p>行情超过 5 分钟、历史样本不足或关键时间缺失时，系统不会给出交易结论。所有结果只供研究，最终决定由你完成。</p>
         </div>
       </section>
     </main>
