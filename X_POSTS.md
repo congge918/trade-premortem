@@ -4,11 +4,13 @@
 
 > 发布时附上不超过 3 分钟的演示视频；这一条即可作为提交表中的 X 项目介绍链接。发布前确认 Demo 可访问。
 
-周末 rNVDA 还在交易。现在追进去，最坏会亏多少？
+一笔 rNVDA 交易，计划投 1000U，最多亏 25U。
 
-TradePremortem 用 Bitget 数据回看相似行情，算出压力亏损和金额上限，再让 Qwen 找出反方风险。仓位过重就让你等，数据过期就拒绝回答。
+TradePremortem 用 Bitget 数据算出压力亏损 36.93U、金额上限 676.88U，结论是先别下单。
 
-来试试它会不会拦住你的交易
+Qwen 再找反方理由；数据过期，系统直接拒答。
+
+来试试它会不会拦住你
 https://trade-premortem.onrender.com
 
 @Bitget_AI #BitgetHackathon

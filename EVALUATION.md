@@ -1,13 +1,14 @@
-# Evaluation — updated 2026-09-14
+# Evaluation — updated 2026-09-15
 
-## Public deployment QA — 2026-09-11
+## Public deployment QA — 2026-09-15
 
 - Demo: https://trade-premortem.onrender.com
-- Render health check: `ok=true`, `executionEnabled=false`.
 - Public replay catalog: 5 demo stories across `RNVDAUSDT`, `RAAPLUSDT`, `RGOOGLUSDT`, and `RCOINUSDT`.
 - Browser-verified verdict paths: `WAIT`, `INSUFFICIENT_EVIDENCE`, and `PROCEED_WITH_LIMITS`.
 - Browser-verified live Bitget path: six evidence items labeled `LIVE · FACT`, including ticker, candles, market state, market calendar, instrument state, and company overview.
-- Qwen is not yet configured on Render; the UI truthfully labels deterministic fallback as `规则回退 · 未调用模型`.
+- Render health check: `ok=true`, `qwenConfigured=true`, `executionEnabled=false`.
+- Public smoke test: deterministic report returned in 0.88 seconds; Qwen completed in 14.8 seconds with `aiGenerated=true`, provider `Bitget Qwen · qwen3.8-max`, and no warning. This is one observed run, not a latency percentile or success-rate claim.
+- Browser verification confirmed the Chinese UI, complete default research flow, Qwen result replacement, and 390×844 mobile layout.
 
 ## 结论
 
@@ -52,8 +53,8 @@ npm run evaluate
 
 ## 尚未完成的验证
 
-- 千问与普通 LLM 使用相同证据包的对照实验：赛期额度已发放，等待 Render Secret 配置与公开部署验收。
+- 千问与普通 LLM 使用相同证据包的正式对照实验：公开 Qwen 单次调用已验收，但尚未形成足够样本的对照结果。
 - 至少 3 名真实测试者的无引导可用性测试：尚未执行。
-- 新版公开部署后的桌面、手机和隐身窗口复核。
+- 隐身窗口复核：尚未单独执行；公开页面已在自动化浏览器的桌面和手机尺寸下通过。
 
 这些项目未完成前不会写成已验证，也不会填入提交表单的“验证结果”。

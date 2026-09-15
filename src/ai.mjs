@@ -40,7 +40,7 @@ function fallbackNarrative(result) {
 
 function promptFor(result) {
   const market = result.market || {};
-  return `你是一个交易观点的反方审讯员，不预测收益，也不下单。只根据给定 JSON 返回严格 JSON，字段为 strongestCounterargument(string)、hiddenAssumptions(string[3])、falsifiers(string[3])、humanPrompt(string)。不得改变 verdict，不得编造 JSON 中没有的事实。\n${JSON.stringify({
+  return `你是一个交易观点的反方审讯员，不预测收益，也不下单。只根据给定 JSON 返回严格 JSON，字段为 strongestCounterargument(string)、hiddenAssumptions(string[3])、falsifiers(string[3])、humanPrompt(string)。不得改变 verdict，不得编造 JSON 中没有的事实。证据不含订单簿和成交明细，因此禁止声称流动性、价差、滑点、成交量、手续费或资金费率发生了变化。\n${JSON.stringify({
     verdict: result.verdict,
     proposal: result.proposal,
     metrics: result.metrics,
@@ -95,6 +95,15 @@ function parseQwenJson(text) {
   return JSON.parse(value.slice(start, end + 1));
 }
 
+const unsupportedMarketClaims = /流动性|价差|滑点|订单簿|成交量|手续费|资金费率|\b(?:liquidity|spread|slippage|order\s*book|volume|trading fee|funding rate)\b/i;
+
+function validateGroundedNarrative(parsed) {
+  if (unsupportedMarketClaims.test(JSON.stringify(parsed))) {
+    throw new Error("Qwen used unsupported market microstructure claims");
+  }
+  return parsed;
+}
+
 export async function explainWithQwen(result) {
   const { apiKey, baseUrl, model } = qwenConfig();
   if (!apiKey) return fallbackNarrative(result);
@@ -122,7 +131,7 @@ export async function explainWithQwen(result) {
     });
     if (!response.ok) throw new Error(`Qwen HTTP ${response.status}`);
     const payload = await response.json();
-    const parsed = parseQwenJson(responseText(payload));
+    const parsed = validateGroundedNarrative(parseQwenJson(responseText(payload)));
     if (
       typeof parsed.strongestCounterargument !== "string" ||
       !Array.isArray(parsed.hiddenAssumptions) ||
@@ -140,4 +149,4 @@ export async function explainWithQwen(result) {
   }
 }
 
-export { fallbackNarrative, parseQwenJson, qwenConfig, responseText };
+export { fallbackNarrative, parseQwenJson, qwenConfig, responseText, validateGroundedNarrative };

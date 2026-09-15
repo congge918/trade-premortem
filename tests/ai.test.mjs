@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { QWEN_TIMEOUT_MS, explainWithQwen, parseQwenJson, qwenConfig, responseText } from "../src/ai.mjs";
+import { QWEN_TIMEOUT_MS, explainWithQwen, parseQwenJson, qwenConfig, responseText, validateGroundedNarrative } from "../src/ai.mjs";
 
 const result = {
   verdict: "WAIT",
@@ -101,4 +101,15 @@ test("Qwen JSON parser accepts reasoning text and fenced output", () => {
 
 test("responseText also accepts a chat-completions shaped response", () => {
   assert.equal(responseText({ choices: [{ message: { content: "{\"ok\":true}" } }] }), "{\"ok\":true}");
+});
+
+test("Qwen narrative rejects unsupported microstructure claims", () => {
+  assert.throws(
+    () => validateGroundedNarrative({ strongestCounterargument: "休市期间流动性枯竭，滑点会扩大。" }),
+    /unsupported market microstructure claims/
+  );
+  assert.deepEqual(
+    validateGroundedNarrative({ strongestCounterargument: "压力亏损超过用户填写的预算。" }),
+    { strongestCounterargument: "压力亏损超过用户填写的预算。" }
+  );
 });
